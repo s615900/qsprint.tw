@@ -155,9 +155,9 @@ export const news: NewsItem[] = [
 
 export const portfolio: PortfolioShot[] = [
   { caption: "大隊接力・交棒瞬間", place: "臺北田徑場", date: "2026.04.20", tone: { a: "#FFD699", b: "#D45757", icon: "baton" } },
-  { caption: "110公尺跨欄・第三欄起跳", place: "新北田徑場", date: "2026.04.15", tone: { a: "#F8EFE2", b: "#D58D3F", icon: "hurdle" } },
+  { caption: "110公尺跨欄、破大會紀錄", place: "新北田徑場", date: "2026.04.15", tone: { a: "#F8EFE2", b: "#D58D3F", icon: "hurdle" } },
   { caption: "田徑跑道・分道線特寫", place: "桃園青埔田徑場", date: "2026.03.29", tone: { a: "#FFB7C5", b: "#1E2430", icon: "lanes" }, photo: "/images/track-02-relay-baton.jpg" },
-  { caption: "頒獎典禮・冠軍組", place: "高雄國家體育場", date: "2026.03.15", tone: { a: "#FFD699", b: "#766D63", icon: "podium" } },
+  { caption: "頒獎典禮・大會紀錄", place: "高雄國家體育場", date: "2026.03.15", tone: { a: "#FFD699", b: "#766D63", icon: "podium" } },
   { caption: "100公尺短跑・起跑瞬間", place: "臺中洲際田徑場", date: "2026.02.28", tone: { a: "#FDF6EC", b: "#D45757", icon: "blocks" } },
   { caption: "撐竿跳高・過竿瞬間", place: "新北田徑場", date: "2026.02.20", tone: { a: "#FFB7C5", b: "#D58D3F", icon: "stopwatch" } },
   { caption: "大隊接力・最後一棒衝線", place: "臺北田徑場", date: "2026.04.20", tone: { a: "#FFD699", b: "#D45757", icon: "tape" } },
