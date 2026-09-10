@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import IconSprite from "@/components/Icons";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
+import SiteChrome from "@/components/SiteChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,9 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="bg-paper font-body text-ink antialiased">
         <IconSprite />
-        <SiteHeader />
-        <main>{children}</main>
-        <SiteFooter />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );
