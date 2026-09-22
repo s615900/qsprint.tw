@@ -5,7 +5,7 @@ import Link from "next/link"; // 匯入 Next.js 的頁面導覽連結元件
 import PhotoTile from "./PhotoTile"; // 匯入圖片顯示元件
 import ParallaxImage from "./ParallaxImage"; // 匯入具有視差效果的圖片容器元件
 import Eyebrow from "./Eyebrow"; // 匯入小標籤(眉標)元件
-import type { HeroSlide } from "@/lib/content"; // 匯入輪播投影片的型別定義
+import type { HeroSlide } from "@/lib/db"; // 匯入輪播投影片的型別定義(資料來自 MongoDB)
 
 export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) { // 定義輪播元件，接收投影片陣列作為 props
   const [index, setIndex] = useState(0); // 目前顯示的投影片索引，預設第 0 張
@@ -91,7 +91,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) { // �
           {/* 依投影片數量渲染對應的分頁指示點 */}
           {slides.map((s, i) => (
             <button
-              key={s.image.src} // 以圖片路徑作為 key
+              key={s._id} // 以文件 id 作為 key
               type="button" // 純按鈕，不觸發表單送出
               aria-label={`前往第 ${i + 1} 則`} // 無障礙標籤:說明這是跳到第幾則投影片
               aria-current={i === index} // 標示目前是否為使用中的投影片

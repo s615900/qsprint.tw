@@ -1,7 +1,7 @@
 import Eyebrow from "./Eyebrow"; // 匯入小標籤元件，用來標示區塊分類
-import { schedule } from "@/lib/content"; // 匯入賽事行程的靜態資料陣列
+import type { ScheduleItem } from "@/lib/db"; // 匯入賽事的型別(資料來自 MongoDB)
 
-export default function ScheduleSection() { // 匯出賽事行事曆區塊元件
+export default function ScheduleSection({ schedule }: { schedule: ScheduleItem[] }) { // 匯出賽事行事曆區塊元件，資料由父層傳入
   return ( // 回傳整個區塊的畫面結構
     <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16"> {/* 區塊外層容器，置中並設定最大寬度與內距 */}
       <Eyebrow>賽事行事曆</Eyebrow> {/* 顯示「賽事行事曆」小標籤 */}
@@ -15,9 +15,12 @@ export default function ScheduleSection() { // 匯出賽事行事曆區塊元件
       </div>
 
       <div className="divide-y divide-line"> {/* 賽事清單容器，項目間以分隔線區隔 */}
+        {schedule.length === 0 && ( // 沒有任何賽事時顯示提示文字
+          <p className="py-8 text-center text-[0.9rem] text-muted">目前尚未公布賽事,敬請期待。</p>
+        )}
         {schedule.map((item) => ( // 走訪 schedule 陣列，為每一筆賽事資料渲染一列
           <div
-            key={item.event} // 以賽事名稱作為 React 的 key
+            key={item._id} // 以文件 id 作為 React 的 key
             className="flex flex-col gap-1.5 py-6 sm:flex-row sm:items-center sm:gap-8" // 單筆賽事列的排版樣式(手機直排、桌機橫排)
           >
             <span className="font-clock text-[0.85rem] tracking-widest text-ink/25 sm:w-10"> {/* 顯示月份的小字樣式 */}

@@ -1,3 +1,4 @@
+import Link from "next/link"; // 匯入 Next.js 的頁面導覽連結元件
 import { IconSearch } from "./AdminIcons"; // 匯入搜尋圖示元件
 
 export default function AdminTopbar({ title, subtitle }: { title: string; subtitle: string }) { // 匯出後台頂部列元件，接收標題與副標題文字
@@ -16,12 +17,13 @@ export default function AdminTopbar({ title, subtitle }: { title: string; subtit
             className="w-44 bg-transparent text-[12.5px] text-ink placeholder:text-muted focus:outline-none" // 輸入框樣式，透明背景、無外框線
           />
         </label>
-        <button
-          type="button" // 按鈕型別為一般按鈕(不會觸發表單送出)
+        <Link
+          href="/" // 連到前台首頁
+          target="_blank" // 另開分頁查看前台
           className="rounded-full border border-line bg-paper-2 px-3.5 py-1.5 text-[13px] font-semibold hover:bg-paper-3" // 按鈕外觀樣式，含 hover 效果
         >
           檢視前台 {/* 按鈕文字 */}
-        </button>
+        </Link>
       </div>
     </header>
   );

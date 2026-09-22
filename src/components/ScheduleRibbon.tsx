@@ -1,7 +1,7 @@
 import Link from "next/link"; // 匯入 Next.js 頁面導覽連結元件
-import { schedule } from "@/lib/content"; // 匯入賽程靜態資料
+import type { ScheduleItem } from "@/lib/db"; // 匯入賽事的型別(資料來自 MongoDB)
 
-export default function ScheduleRibbon() { // 定義並匯出首頁的賽程橫幅元件
+export default function ScheduleRibbon({ schedule }: { schedule: ScheduleItem[] }) { // 定義並匯出首頁的賽程橫幅元件，資料由父層傳入
   return ( // 回傳橫幅整體的 JSX
     <div className="border-b-2 border-ink py-6"> {/* 橫幅最外層容器，底部有邊線 */}
       <div className="mx-auto max-w-6xl px-5 sm:px-8"> {/* 置中並限制最大寬度的內容容器 */}
@@ -25,7 +25,7 @@ export default function ScheduleRibbon() { // 定義並匯出首頁的賽程橫�
           {/* 依賽程資料逐筆渲染橫向捲動卡片 */}
           {schedule.map((item, index) => ( // 走訪賽程陣列，並取得索引值作為顯示序號
             <div
-              key={item.event} // 以賽事名稱作為 key
+              key={item._id} // 以文件 id 作為 key
               className="min-w-[220px] flex-none border-t-4 border-gold bg-white px-4 py-3 [scroll-snap-align:start]" // 單張卡片樣式，固定最小寬度並設定捲動吸附點
             >
               <div className="flex items-baseline justify-between gap-2"> {/* 日期與序號的橫向排列容器 */}

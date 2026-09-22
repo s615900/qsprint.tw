@@ -2,10 +2,18 @@ import ArtTile from "./ArtTile"; // 匯入以色塊＋圖示呈現的替代插�
 import PhotoTile from "./PhotoTile"; // 匯入照片卡片元件
 import ParallaxImage from "./ParallaxImage"; // 匯入具視差效果的圖片元件
 import Eyebrow from "./Eyebrow"; // 匯入小標籤元件
-import { news } from "@/lib/content"; // 匯入新聞資料的靜態陣列
+import type { NewsItem } from "@/lib/db"; // 匯入新聞的型別(資料來自 MongoDB)
 
-export default function NewsSection() { // 匯出「最新消息」區塊元件
+export default function NewsSection({ news }: { news: NewsItem[] }) { // 匯出「最新消息」區塊元件，資料由父層傳入(僅含已發布文章)
   const [lead, ...rest] = news; // 解構出第一則新聞當作頭條，其餘放進 rest 陣列
+
+  if (!lead) { // 目前還沒有任何已發布的新聞
+    return (
+      <section id="news" className="mx-auto max-w-6xl px-5 py-16 text-center sm:px-8">
+        <p className="text-[0.95rem] text-muted">目前還沒有發布任何消息,敬請期待。</p>
+      </section>
+    );
+  }
 
   return ( // 回傳畫面結構
     <section id="news" className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16"> {/* 區塊容器，提供錨點 id */}
@@ -45,7 +53,7 @@ export default function NewsSection() { // 匯出「最新消息」區塊元件
       <div className="divide-y divide-line"> {/* 其餘新聞清單容器，項目間有分隔線 */}
         {rest.map((item, index) => ( // 走訪除了頭條以外的其餘新聞，並取得索引值
           <article
-            key={item.title} // 以新聞標題作為 key
+            key={item._id} // 以文件 id 作為 key
             className="group grid grid-cols-[auto_1fr] items-start gap-5 py-7 sm:grid-cols-[3.5rem_10rem_1fr]" // 單則新聞的格線排版樣式
           >
             <span className="font-clock text-[1.6rem] leading-none text-ink/25"> {/* 序號顯示樣式 */}

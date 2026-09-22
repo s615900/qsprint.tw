@@ -8,7 +8,6 @@ if (!uri) { // 若沒有設定連線字串就直接拋出錯誤，避免後面�
 const DB_NAME = "qsprint"; // 固定使用的資料庫名稱
 
 declare global { // 擴充全域型別，讓開發模式下可以把連線快取在 global 上
-  // eslint-disable-next-line no-var
   var _qsprintMongoClientPromise: Promise<MongoClient> | undefined; // 開發模式下跨熱重載共用的連線 Promise
 }
 

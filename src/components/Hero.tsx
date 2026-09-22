@@ -1,8 +1,8 @@
 import HeroCarousel from "./HeroCarousel"; // 匯入主視覺輪播元件
 import Parallax from "./Parallax"; // 匯入視差捲動效果元件
-import { heroSlides } from "@/lib/content"; // 匯入主視覺輪播的靜態資料
+import type { HeroSlide } from "@/lib/db"; // 匯入首頁焦點的型別(資料來自 MongoDB)
 
-export default function Hero() { // 匯出首頁主視覺區塊元件
+export default function Hero({ slides }: { slides: HeroSlide[] }) { // 匯出首頁主視覺區塊元件，投影片資料由父層傳入
   return ( // 回傳畫面結構
     <section className="relative overflow-hidden border-b-2 border-ink py-10 sm:py-14 lg:py-16"> {/* 區塊容器，相對定位並隱藏溢出內容 */}
       <Parallax
@@ -17,7 +17,7 @@ export default function Hero() { // 匯出首頁主視覺區塊元件
         </span>
       </Parallax>
 
-      <HeroCarousel slides={heroSlides} /> {/* 渲染輪播元件，傳入輪播投影片資料 */}
+      {slides.length > 0 && <HeroCarousel slides={slides} />} {/* 有資料才渲染輪播元件 */}
     </section>
   );
 }

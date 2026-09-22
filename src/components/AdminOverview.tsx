@@ -1,19 +1,28 @@
 import type { ComponentType } from "react"; // 匯入 React 的元件型別，供圖示 props 使用
-import { stats, schedule, news, portfolio, heroSlides } from "@/lib/content"; // 匯入各項靜態資料
+import { stats, portfolio } from "@/lib/content"; // 匯入仍為靜態資料的統計數字與作品集
 import { daysUntil } from "@/lib/admin"; // 匯入計算距今天數的工具函式
 import type { AdminSection } from "./AdminSidebar"; // 匯入後台側邊欄分頁型別
 import { IconDoc, IconUpload, IconLayers, IconCalendar } from "./AdminIcons"; // 匯入待辦事項要用的各種圖示
+import type { HeroSlide, NewsItem, ScheduleItem } from "@/lib/db"; // 匯入首頁焦點、新聞、賽事的型別
 
 const uploadedCount = portfolio.filter((shot) => shot.photo).length; // 計算作品集中已上傳實際照片的數量
 const pendingCount = portfolio.length - uploadedCount; // 計算尚未上傳照片、仍用色卡佔位的數量
-const nextEvent = schedule[0]; // 取得賽程中的第一筆（最近一場）賽事
 
 export default function AdminOverview({ // 定義後台「總覽」頁面元件並預設匯出
+  heroSlides, // 首頁焦點資料(來自 MongoDB)
+  news, // 最新消息資料(來自 MongoDB)
+  schedule, // 賽事資料(來自 MongoDB)
   onNavigate, // 接收切換分頁用的回呼函式
 }: {
-  onNavigate: (section: AdminSection) => void; // onNavigate 的型別：傳入分頁名稱、無回傳值
+  heroSlides: HeroSlide[];
+  news: NewsItem[];
+  schedule: ScheduleItem[];
+  onNavigate: (section: AdminSection) => void;
 }) {
-  const nextEventDays = daysUntil(nextEvent.date); // 計算距離下一場賽事還有幾天
+  const draftNews = news.find((item) => item.status === "draft"); // 找出第一篇草稿(若有)
+  const draftCount = news.length - news.filter((item) => item.status === "published").length; // 計算草稿篇數
+  const nextEvent = schedule[0]; // 取得賽程中的第一筆（最近一場）賽事
+  const nextEventDays = nextEvent ? daysUntil(nextEvent.date) : null; // 計算距離下一場賽事還有幾天(沒有賽事就不計算)
 
   return ( // 回傳畫面內容
     <div className="flex flex-col gap-6"> {/* 整頁垂直排列容器 */}
@@ -29,40 +38,44 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
       <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]"> {/* 主要內容格線，桌機分成左寬右窄兩欄 */}
         <div className="rounded-xl border border-line bg-paper-2 p-5"> {/* 待辦事項卡片 */}
           <p className="text-[11px] font-semibold uppercase tracking-wide text-gold">待辦事項</p> {/* 卡片小標籤 */}
-          <h3 className="mt-1 text-[14px] font-bold">需要你處理的 4 件事</h3> {/* 卡片標題 */}
+          <h3 className="mt-1 text-[14px] font-bold">需要你處理的事</h3> {/* 卡片標題 */}
           <ul className="mt-3.5 flex flex-col divide-y divide-line"> {/* 待辦清單容器，項目間有分隔線 */}
+            {draftNews && ( // 有草稿才顯示這一列
+              <TodoRow
+                icon={IconDoc}
+                onClick={() => onNavigate("news")}
+                title="有消息草稿待發布"
+                detail={`「${draftNews.title}」`}
+                tagLabel="草稿"
+                tagTone="muted"
+              />
+            )}
             <TodoRow
-              icon={IconDoc} // 使用文件圖示
-              onClick={() => onNavigate("news")} // 點擊後切換到最新消息分頁
-              title="1 篇消息草稿待發布" // 待辦標題
-              detail="「新北市中等學校田徑錦標賽・賽前預告」・建議於 09.19 開賽前送出" // 待辦細節說明
-              tagLabel="草稿" // 標籤文字
-              tagTone="muted" // 標籤色調
+              icon={IconUpload}
+              onClick={() => onNavigate("portfolio")}
+              title={`${pendingCount} 張作品尚未上傳原始檔`}
+              detail={`目前以色卡佔位・作品集僅 ${uploadedCount}/${portfolio.length} 已上傳實際照片`}
+              tagLabel="待上傳"
+              tagTone="muted"
             />
             <TodoRow
-              icon={IconUpload} // 使用上傳圖示
-              onClick={() => onNavigate("portfolio")} // 點擊後切換到作品集分頁
-              title={`${pendingCount} 張作品尚未上傳原始檔`} // 動態組合待辦標題，帶入待上傳張數
-              detail={`目前以色卡佔位・作品集僅 ${uploadedCount}/${portfolio.length} 已上傳實際照片`} // 動態組合細節說明
-              tagLabel="待上傳" // 標籤文字
-              tagTone="muted" // 標籤色調
+              icon={IconLayers}
+              onClick={() => onNavigate("hero")}
+              title={`首頁輪播共 ${heroSlides.length} 則`}
+              detail={heroSlides[0] ? `目前顯示第 1 則・「${heroSlides[0].titleLines.join("")}」` : "尚未新增任何首頁焦點"}
+              tagLabel="顯示中"
+              tagTone="live"
             />
-            <TodoRow
-              icon={IconLayers} // 使用圖層圖示
-              onClick={() => onNavigate("hero")} // 點擊後切換到首頁輪播分頁
-              title={`首頁輪播共 ${heroSlides.length} 則`} // 動態組合標題，帶入輪播總數
-              detail={`目前顯示第 1 則・「${heroSlides[0].titleLines.join("")}」`} // 動態組合細節，顯示第一則標題
-              tagLabel="顯示中" // 標籤文字
-              tagTone="live" // 標籤色調
-            />
-            <TodoRow
-              icon={IconCalendar} // 使用行事曆圖示
-              onClick={() => onNavigate("schedule")} // 點擊後切換到賽程分頁
-              title="最近賽事即將開始" // 待辦標題
-              detail={`${nextEvent.event}・${nextEvent.date}・${nextEvent.place}`} // 動態組合最近賽事資訊
-              tagLabel={`${nextEventDays} 天後`} // 動態組合倒數天數標籤
-              tagTone="soon" // 標籤色調
-            />
+            {nextEvent && ( // 有賽事才顯示這一列
+              <TodoRow
+                icon={IconCalendar}
+                onClick={() => onNavigate("schedule")}
+                title="最近賽事即將開始"
+                detail={`${nextEvent.event}・${nextEvent.date}・${nextEvent.place}`}
+                tagLabel={`${nextEventDays} 天後`}
+                tagTone="soon"
+              />
+            )}
           </ul>
         </div>
 
@@ -71,27 +84,31 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
             <p className="text-[11px] font-semibold uppercase tracking-wide text-gold">近期賽事</p> {/* 卡片小標籤 */}
             <h3 className="mt-1 text-[14px] font-bold">接下來的拍攝行程</h3> {/* 卡片標題 */}
             <div className="mt-3 flex flex-col divide-y divide-line"> {/* 賽事清單容器，項目間有分隔線 */}
-              {schedule.slice(0, 3).map((item) => { // 只取賽程陣列的前 3 筆
-                const days = daysUntil(item.date); // 計算此筆賽事距今天數
-                return ( // 回傳該筆賽事的畫面
-                  <div key={item.event} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"> {/* 單筆賽事列，key 用賽事名稱 */}
-                    <span className="font-clock w-16 flex-none rounded-md bg-paper-3 py-1 text-center text-[12px] tabular-nums"> {/* 日期標籤樣式 */}
-                      {item.date.split("–")[0].trim()} {/* 只取日期區間的起始日並去除前後空白 */}
-                    </span>
-                    <div className="min-w-0 flex-1"> {/* 賽事文字資訊容器 */}
-                      <p className="truncate text-[12.5px] font-semibold">{item.event}</p> {/* 賽事名稱，過長截斷 */}
-                      <p className="truncate text-[11.5px] text-ink-soft">{item.place}</p> {/* 賽事地點，過長截斷 */}
+              {schedule.length === 0 ? (
+                <p className="py-2.5 text-[12.5px] text-ink-soft">尚未新增任何賽事。</p>
+              ) : (
+                schedule.slice(0, 3).map((item) => { // 只取賽程陣列的前 3 筆
+                  const days = daysUntil(item.date); // 計算此筆賽事距今天數
+                  return ( // 回傳該筆賽事的畫面
+                    <div key={item._id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"> {/* 單筆賽事列，key 用 _id */}
+                      <span className="font-clock w-16 flex-none rounded-md bg-paper-3 py-1 text-center text-[12px] tabular-nums"> {/* 日期標籤樣式 */}
+                        {item.date.split("–")[0].trim()} {/* 只取日期區間的起始日並去除前後空白 */}
+                      </span>
+                      <div className="min-w-0 flex-1"> {/* 賽事文字資訊容器 */}
+                        <p className="truncate text-[12.5px] font-semibold">{item.event}</p> {/* 賽事名稱，過長截斷 */}
+                        <p className="truncate text-[11.5px] text-ink-soft">{item.place}</p> {/* 賽事地點，過長截斷 */}
+                      </div>
+                      <span
+                        className={`flex-none rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${
+                          days <= 14 ? "bg-coral/10 text-coral" : "bg-paper-3 text-ink-soft" // 距今 14 天內用強調色，否則用一般色
+                        }`}
+                      >
+                        {days <= 14 ? "即將開始" : "已排定"} {/* 依天數顯示不同狀態文字 */}
+                      </span>
                     </div>
-                    <span
-                      className={`flex-none rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${
-                        days <= 14 ? "bg-coral/10 text-coral" : "bg-paper-3 text-ink-soft" // 距今 14 天內用強調色，否則用一般色
-                      }`}
-                    >
-                      {days <= 14 ? "即將開始" : "已排定"} {/* 依天數顯示不同狀態文字 */}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -100,7 +117,7 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
             <h3 className="mt-1 text-[14px] font-bold">目前站上內容量</h3> {/* 卡片標題 */}
             <div className="mt-3 grid grid-cols-2 gap-2.5"> {/* 兩欄格線容器 */}
               <CountTile value={heroSlides.length} label="首頁焦點" /> {/* 顯示首頁輪播則數 */}
-              <CountTile value={news.length + 1} label="最新消息(1 草稿)" /> {/* 顯示新聞則數，另加 1 篇草稿 */}
+              <CountTile value={news.length} label={`最新消息(${draftCount} 草稿)`} /> {/* 顯示新聞則數與草稿數 */}
               <CountTile value={portfolio.length} label={`作品(${uploadedCount} 已上傳)`} /> {/* 顯示作品總數與已上傳數 */}
               <CountTile value={schedule.length} label="賽事行程" /> {/* 顯示賽程總數 */}
             </div>
