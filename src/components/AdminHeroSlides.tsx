@@ -141,10 +141,19 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
                 />
               </label>
             </div>
-            {/* 閱讀提示文字、按鈕文字、按鈕連結不開放後台編輯，改用固定預設值(編輯既有焦點時沿用原本的值) */}
+            {/* 閱讀提示文字、按鈕文字不開放後台編輯，改用固定預設值(編輯既有焦點時沿用原本的值) */}
             <input type="hidden" name="readTime" defaultValue={modal.mode === "edit" ? modal.slide.readTime : "閱讀更多"} />
             <input type="hidden" name="ctaLabel" defaultValue={modal.mode === "edit" ? modal.slide.ctaLabel : "閱讀全文 →"} />
-            <input type="hidden" name="ctaHref" defaultValue={modal.mode === "edit" ? modal.slide.ctaHref : "/news"} />
+            <label className={labelClass}>
+              按鈕連結(點擊這則焦點會前往的頁面)
+              <input
+                name="ctaHref"
+                placeholder="/news"
+                defaultValue={modal.mode === "edit" ? modal.slide.ctaHref : "/news"}
+                required
+                className={inputClass}
+              />
+            </label>
             <AdminImageField
               srcName="imageSrc"
               altName="imageAlt"
