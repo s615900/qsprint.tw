@@ -7,6 +7,8 @@ export const metadata: Metadata = { // 匯出這個頁面的中繼資料設定
   description: "賽場邊的第一手記錄,從起跑到頒獎台,每一篇都是一場比賽的側寫。", // 網頁描述文字
 }; // metadata 設定結束
 
+export const dynamic = "force-dynamic"; // 內容來自資料庫，強制每次請求都重新渲染，避免建置時就把資料寫死或需要連上資料庫
+
 export default async function NewsPage() { // 匯出最新消息頁面元件（Next.js App Router 的頁面進入點）
   const news = await listPublishedNews(); // 只取已發布的文章
   return <NewsSection news={news} />; // 回傳並渲染最新消息區塊元件

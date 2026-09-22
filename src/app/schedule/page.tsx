@@ -7,6 +7,8 @@ export const metadata: Metadata = { // 匯出這個頁面的中繼資料設定
   description: "青春止秒團隊接下來確定進場拍攝的賽事清單,持續更新中。", // 網頁描述文字
 }; // metadata 設定結束
 
+export const dynamic = "force-dynamic"; // 內容來自資料庫，強制每次請求都重新渲染，避免建置時就把資料寫死或需要連上資料庫
+
 export default async function SchedulePage() { // 匯出賽程頁面元件（Next.js App Router 的頁面進入點）
   const schedule = await listSchedule(); // 從資料庫抓取賽程資料
   return <ScheduleSection schedule={schedule} />; // 回傳並渲染賽程區塊元件

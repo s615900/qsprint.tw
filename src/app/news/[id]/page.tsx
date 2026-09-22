@@ -7,6 +7,8 @@ import ArtTile from "@/components/ArtTile"; // 匯入以色塊＋圖示呈現的
 import ParallaxImage from "@/components/ParallaxImage"; // 匯入具視差效果的圖片元件
 import { getPublishedNewsById } from "@/lib/db"; // 匯入依 id 讀取單篇已發布新聞的函式
 
+export const dynamic = "force-dynamic"; // 內容來自資料庫，強制每次請求都重新渲染，避免建置時就把資料寫死或需要連上資料庫
+
 export async function generateMetadata({ // 依文章內容動態產生網頁標題與描述
   params,
 }: {
