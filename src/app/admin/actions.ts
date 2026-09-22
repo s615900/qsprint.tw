@@ -1,5 +1,8 @@
 "use server"; // 標記這個檔案裡的函式都是 Server Function，只會在伺服器執行
 
+import { randomUUID } from "node:crypto"; // 匯入亂數 ID 產生器，用來命名上傳的圖片檔案
+import { mkdir, writeFile } from "node:fs/promises"; // 匯入檔案系統工具，把上傳的圖片寫進 public/uploads
+import path from "node:path"; // 匯入路徑工具
 import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
@@ -34,6 +37,44 @@ function revalidateAfterScheduleChange() { // 賽程異動後，同時刷新後�
   revalidatePath("/admin");
   revalidatePath("/schedule");
   revalidatePath("/");
+}
+
+// ---------- 圖片上傳 ----------
+// 目前只存在專案的 public/uploads 資料夾裡(本機檔案系統)，適合先在自己電腦上使用；
+// 如果之後要部署到 Vercel 之類「檔案系統唯讀」的平台，這裡要改接雲端圖床(如 Vercel Blob / S3)。
+
+const ALLOWED_IMAGE_TYPES: Record<string, string> = { // 允許的圖片格式，及對應要儲存的副檔名
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 圖片大小上限:8MB
+
+export async function uploadImageAction(formData: FormData): Promise<string> { // 上傳一張圖片，回傳可公開存取的路徑
+  await requireAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    throw new Error("沒有收到檔案。");
+  }
+  const extension = ALLOWED_IMAGE_TYPES[file.type];
+  if (!extension) {
+    throw new Error("只接受 JPG、PNG、WEBP 或 GIF 格式的圖片。");
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error("圖片檔案不能超過 8MB。");
+  }
+
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  await mkdir(uploadsDir, { recursive: true }); // 資料夾不存在就先建立
+
+  // 檔名由伺服器產生(不採用使用者原始檔名)，避免路徑穿越或檔名衝突等問題。
+  const filename = `${randomUUID()}.${extension}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(uploadsDir, filename), bytes);
+
+  return `/uploads/${filename}`;
 }
 
 // ---------- 首頁焦點 ----------
@@ -84,12 +125,14 @@ export async function deleteHeroSlideAction(id: string): Promise<void> { // 刪�
 function newsFromForm(formData: FormData): NewsInput { // 把表單資料轉成資料庫要存的格式
   const presetId = String(formData.get("tonePreset") ?? tonePresets[0].id);
   const preset = tonePresets.find((p) => p.id === presetId) ?? tonePresets[0];
+  const imageSrc = String(formData.get("imageSrc") ?? "").trim();
   return {
     tag: String(formData.get("tag") ?? "").trim(),
     title: String(formData.get("title") ?? "").trim(),
     excerpt: String(formData.get("excerpt") ?? "").trim(),
     meta: String(formData.get("meta") ?? "").trim(),
     tone: { a: preset.a, b: preset.b, icon: preset.id },
+    image: imageSrc ? { src: imageSrc, alt: String(formData.get("imageAlt") ?? "").trim() } : null, // 沒有上傳照片就維持 null，前台會改用色塊+圖示
     status: formData.get("status") === "published" ? "published" : "draft",
   };
 }

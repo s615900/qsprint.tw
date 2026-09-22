@@ -30,10 +30,11 @@ export default function NewsSection({ news }: { news: NewsItem[] }) { // 匯出�
       <article className="group grid gap-6 border-b border-line pb-10 sm:grid-cols-[0.9fr_1.1fr] sm:gap-10"> {/* 頭條新聞容器，桌機分兩欄 */}
         <div className="aspect-[4/3] sm:aspect-auto"> {/* 頭條圖片容器 */}
           <ParallaxImage speed={0.5}> {/* 以 0.5 倍速度做視差效果 */}
-            <PhotoTile
-              src="/images/track-05-finish-line.jpg" // 頭條圖片來源路徑
-              alt="大隊接力選手在交接區內全力衝刺" // 頭條圖片替代文字
-            />
+            {lead.image ? ( // 有上傳照片就用照片，否則沿用預設圖片
+              <PhotoTile src={lead.image.src} alt={lead.image.alt} />
+            ) : (
+              <PhotoTile src="/images/track-05-finish-line.jpg" alt="大隊接力選手在交接區內全力衝刺" />
+            )}
           </ParallaxImage>
         </div>
         <div className="flex flex-col justify-center gap-3"> {/* 頭條文字內容容器 */}
@@ -59,8 +60,12 @@ export default function NewsSection({ news }: { news: NewsItem[] }) { // 匯出�
             <span className="font-clock text-[1.6rem] leading-none text-ink/25"> {/* 序號顯示樣式 */}
               {String(index + 2).padStart(2, "0")} {/* 因為頭條是 01，這裡從 02 開始編號並補零成兩位數 */}
             </span>
-            <div className="col-span-2 aspect-[16/10] sm:col-span-1"> {/* 替代插圖容器 */}
-              <ArtTile toneA={item.tone.a} toneB={item.tone.b} icon={item.tone.icon} /> {/* 渲染以色調與圖示組成的插圖 */}
+            <div className="col-span-2 aspect-[16/10] sm:col-span-1"> {/* 圖片/替代插圖容器 */}
+              {item.image ? ( // 有上傳照片就用照片，否則用色塊+圖示代替
+                <PhotoTile src={item.image.src} alt={item.image.alt} />
+              ) : (
+                <ArtTile toneA={item.tone.a} toneB={item.tone.b} icon={item.tone.icon} />
+              )}
             </div>
             <div className="col-span-2 flex flex-col gap-2 sm:col-span-1"> {/* 文字內容容器 */}
               <Eyebrow>{item.tag}</Eyebrow> {/* 顯示分類標籤 */}

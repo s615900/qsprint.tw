@@ -63,6 +63,7 @@ export interface NewsItem { // 新聞文章，序列化給前端使用的型別
   excerpt: string;
   meta: string;
   tone: { a: string; b: string; icon: IconId };
+  image: { src: string; alt: string } | null; // 上傳的實際照片；沒有照片時前台會改用 tone 色塊+圖示呈現
   status: NewsStatus;
   createdAt: string; // ISO 字串，用來排序與顯示
 }

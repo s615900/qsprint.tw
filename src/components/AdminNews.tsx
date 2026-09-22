@@ -3,6 +3,7 @@
 import { useState } from "react"; // 匯入 React 的狀態 hook
 import { IconPencil, IconTrash } from "./AdminIcons"; // 匯入編輯與刪除圖示
 import AdminModal from "./AdminModal"; // 匯入共用的彈出視窗外框
+import AdminImageField from "./AdminImageField"; // 匯入圖片上傳欄位元件
 import type { NewsItem } from "@/lib/db"; // 匯入新聞資料的型別
 import { createNewsAction, deleteNewsAction, updateNewsAction } from "@/app/admin/actions"; // 匯入新聞的 Server Actions
 import { tonePresets } from "@/lib/tone-presets"; // 匯入配色預設清單
@@ -163,8 +164,15 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
               發布資訊(顯示於文章下方,如「2026.04.20 · 田徑場邊記事」)
               <input name="meta" defaultValue={modal.mode === "edit" ? modal.item.meta : ""} required className={inputClass} />
             </label>
+            <AdminImageField
+              srcName="imageSrc"
+              altName="imageAlt"
+              label="照片(選填,沒有上傳就用下方插圖配色代替)"
+              defaultSrc={modal.mode === "edit" ? (modal.item.image?.src ?? "") : ""}
+              defaultAlt={modal.mode === "edit" ? (modal.item.image?.alt ?? "") : ""}
+            />
             <label className={labelClass}>
-              插圖配色
+              插圖配色(沒有上傳照片時使用)
               <select
                 name="tonePreset"
                 defaultValue={modal.mode === "edit" ? modal.item.tone.icon : tonePresets[0].id}

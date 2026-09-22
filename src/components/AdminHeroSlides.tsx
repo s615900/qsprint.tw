@@ -4,6 +4,7 @@ import { useState } from "react"; // 匯入狀態 hook
 import PhotoTile from "./PhotoTile"; // 匯入圖片顯示元件
 import Eyebrow from "./Eyebrow"; // 匯入小標籤元件
 import AdminModal from "./AdminModal"; // 匯入共用的彈出視窗外框
+import AdminImageField from "./AdminImageField"; // 匯入圖片上傳欄位元件
 import { IconPencil, IconTrash } from "./AdminIcons"; // 匯入編輯、刪除圖示
 import type { HeroSlide } from "@/lib/db"; // 匯入首頁焦點的型別
 import { createHeroSlideAction, deleteHeroSlideAction, updateHeroSlideAction } from "@/app/admin/actions"; // 匯入首頁焦點的 Server Actions
@@ -172,27 +173,14 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
                 className={inputClass}
               />
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className={labelClass}>
-                圖片路徑
-                <input
-                  name="imageSrc"
-                  placeholder="/images/track-01-sprint-start.jpg"
-                  defaultValue={modal.mode === "edit" ? modal.slide.image.src : ""}
-                  required
-                  className={inputClass}
-                />
-              </label>
-              <label className={labelClass}>
-                圖片替代文字
-                <input
-                  name="imageAlt"
-                  defaultValue={modal.mode === "edit" ? modal.slide.image.alt : ""}
-                  required
-                  className={inputClass}
-                />
-              </label>
-            </div>
+            <AdminImageField
+              srcName="imageSrc"
+              altName="imageAlt"
+              label="圖片"
+              defaultSrc={modal.mode === "edit" ? modal.slide.image.src : ""}
+              defaultAlt={modal.mode === "edit" ? modal.slide.image.alt : ""}
+              required
+            />
             <button type="submit" className="mt-1.5 rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90">
               儲存
             </button>
