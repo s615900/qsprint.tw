@@ -1,8 +1,9 @@
 "use server"; // 標記這個檔案裡的函式都是 Server Function，只會在伺服器執行
 
 import { randomUUID } from "node:crypto"; // 匯入亂數 ID 產生器，用來命名上傳的圖片檔案
-import { mkdir, writeFile } from "node:fs/promises"; // 匯入檔案系統工具，把上傳的圖片寫進 public/uploads
+import { mkdir, writeFile } from "node:fs/promises"; // 匯入檔案系統工具，本機開發時把圖片寫進 public/uploads
 import path from "node:path"; // 匯入路徑工具
+import { put } from "@vercel/blob"; // 匯入 Vercel Blob 用戶端，正式環境(部署到 Vercel)用它存圖片
 import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
@@ -40,8 +41,8 @@ function revalidateAfterScheduleChange() { // 賽程異動後，同時刷新後�
 }
 
 // ---------- 圖片上傳 ----------
-// 目前只存在專案的 public/uploads 資料夾裡(本機檔案系統)，適合先在自己電腦上使用；
-// 如果之後要部署到 Vercel 之類「檔案系統唯讀」的平台，這裡要改接雲端圖床(如 Vercel Blob / S3)。
+// 本機開發(沒有設定 BLOB_READ_WRITE_TOKEN)時，圖片直接寫進專案的 public/uploads 資料夾；
+// 部署到 Vercel 後(有這組環境變數)，改存進 Vercel Blob 雲端圖床，避免圖片在唯讀檔案系統上消失。
 
 const ALLOWED_IMAGE_TYPES: Record<string, string> = { // 允許的圖片格式，及對應要儲存的副檔名
   "image/jpeg": "jpg",
@@ -66,14 +67,21 @@ export async function uploadImageAction(formData: FormData): Promise<string> { /
     throw new Error("圖片檔案不能超過 8MB。");
   }
 
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true }); // 資料夾不存在就先建立
-
   // 檔名由伺服器產生(不採用使用者原始檔名)，避免路徑穿越或檔名衝突等問題。
   const filename = `${randomUUID()}.${extension}`;
   const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(uploadsDir, filename), bytes);
 
+  if (process.env.BLOB_READ_WRITE_TOKEN) { // 有設定 Vercel Blob 的權杖，代表在 Vercel 上執行
+    const blob = await put(`uploads/${filename}`, bytes, {
+      access: "public",
+      contentType: file.type,
+    });
+    return blob.url;
+  }
+
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  await mkdir(uploadsDir, { recursive: true }); // 資料夾不存在就先建立
+  await writeFile(path.join(uploadsDir, filename), bytes);
   return `/uploads/${filename}`;
 }
 
