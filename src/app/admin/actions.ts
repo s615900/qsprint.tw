@@ -28,9 +28,9 @@ function revalidateAfterHeroChange() { // 首頁焦點異動後，同時刷新�
   revalidatePath("/");
 }
 
-function revalidateAfterNewsChange() { // 最新消息異動後，同時刷新後台與前台新聞頁
+function revalidateAfterNewsChange() { // 最新消息異動後，同時刷新後台、前台新聞列表頁與每一篇文章詳情頁
   revalidatePath("/admin");
-  revalidatePath("/news");
+  revalidatePath("/news", "layout");
 }
 
 function revalidateAfterScheduleChange() { // 賽程異動後，同時刷新後台、前台賽程頁與首頁(賽程跑馬燈)
@@ -130,6 +130,7 @@ function newsFromForm(formData: FormData): NewsInput { // 把表單資料轉成�
     tag: String(formData.get("tag") ?? "").trim(),
     title: String(formData.get("title") ?? "").trim(),
     excerpt: String(formData.get("excerpt") ?? "").trim(),
+    content: String(formData.get("content") ?? "").trim(),
     meta: String(formData.get("meta") ?? "").trim(),
     tone: { a: preset.a, b: preset.b, icon: preset.id },
     image: imageSrc ? { src: imageSrc, alt: String(formData.get("imageAlt") ?? "").trim() } : null, // 沒有上傳照片就維持 null，前台會改用色塊+圖示

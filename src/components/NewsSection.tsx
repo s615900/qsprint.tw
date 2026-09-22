@@ -1,3 +1,4 @@
+import Link from "next/link"; // 匯入 Next.js 頁面導覽連結元件
 import ArtTile from "./ArtTile"; // 匯入以色塊＋圖示呈現的替代插圖元件
 import PhotoTile from "./PhotoTile"; // 匯入照片卡片元件
 import ParallaxImage from "./ParallaxImage"; // 匯入具視差效果的圖片元件
@@ -41,9 +42,9 @@ export default function NewsSection({ news }: { news: NewsItem[] }) { // 匯出�
           <span className="font-clock text-[0.85rem] tracking-widest text-muted">01</span> {/* 頭條序號固定顯示 01 */}
           <Eyebrow>{lead.tag}</Eyebrow> {/* 顯示頭條分類標籤 */}
           <h3 className="font-display text-[1.5rem] font-bold leading-snug sm:text-[1.9rem]"> {/* 頭條標題樣式 */}
-            <a href="#" className="no-underline transition-colors group-hover:text-coral"> {/* 頭條標題連結，hover 變色 */}
+            <Link href={`/news/${lead._id}`} className="no-underline transition-colors group-hover:text-coral"> {/* 頭條標題連結，前往文章詳情頁 */}
               {lead.title} {/* 頭條標題文字 */}
-            </a>
+            </Link>
           </h3>
           <p className="max-w-[52ch] text-ink-soft">{lead.excerpt}</p> {/* 頭條摘要文字 */}
           <p className="font-clock text-[0.85rem] tracking-wide text-muted">{lead.meta}</p> {/* 頭條日期/分類等中繼資訊 */}
@@ -70,9 +71,9 @@ export default function NewsSection({ news }: { news: NewsItem[] }) { // 匯出�
             <div className="col-span-2 flex flex-col gap-2 sm:col-span-1"> {/* 文字內容容器 */}
               <Eyebrow>{item.tag}</Eyebrow> {/* 顯示分類標籤 */}
               <h3 className="text-[1.1rem] font-bold leading-snug"> {/* 新聞標題樣式 */}
-                <a href="#" className="no-underline transition-colors group-hover:text-coral"> {/* 新聞標題連結 */}
+                <Link href={`/news/${item._id}`} className="no-underline transition-colors group-hover:text-coral"> {/* 新聞標題連結，前往文章詳情頁 */}
                   {item.title} {/* 新聞標題文字 */}
-                </a>
+                </Link>
               </h3>
               <p className="text-[0.86rem] text-ink-soft">{item.excerpt}</p> {/* 新聞摘要文字 */}
               <p className="font-clock text-[0.8rem] tracking-wide text-muted">{item.meta}</p> {/* 新聞日期/分類等中繼資訊 */}

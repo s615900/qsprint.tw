@@ -151,12 +151,22 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
               <input name="title" defaultValue={modal.mode === "edit" ? modal.item.title : ""} required className={inputClass} />
             </label>
             <label className={labelClass}>
-              摘要
+              摘要(顯示在列表與卡片上的簡短說明)
               <textarea
                 name="excerpt"
                 defaultValue={modal.mode === "edit" ? modal.item.excerpt : ""}
                 required
                 rows={3}
+                className={inputClass}
+              />
+            </label>
+            <label className={labelClass}>
+              內文(文章詳情頁的完整內容,分段請空一行)
+              <textarea
+                name="content"
+                defaultValue={modal.mode === "edit" ? modal.item.content || modal.item.excerpt : ""}
+                required
+                rows={8}
                 className={inputClass}
               />
             </label>

@@ -61,6 +61,7 @@ export interface NewsItem { // 新聞文章，序列化給前端使用的型別
   tag: string;
   title: string;
   excerpt: string;
+  content: string; // 文章全文(內文)，段落之間用空行分隔；文章詳情頁會顯示這欄
   meta: string;
   tone: { a: string; b: string; icon: IconId };
   image: { src: string; alt: string } | null; // 上傳的實際照片；沒有照片時前台會改用 tone 色塊+圖示呈現
@@ -71,8 +72,9 @@ export interface NewsItem { // 新聞文章，序列化給前端使用的型別
 export type NewsInput = Omit<NewsItem, "_id" | "createdAt">; // 新增/修改時由使用者填寫的欄位
 
 function toNewsItem(doc: WithId<Omit<NewsItem, "_id">>): NewsItem { // 把 Mongo 文件轉成前端可用的型別
-  const { _id, ...rest } = doc;
-  return { _id: _id.toString(), ...rest };
+  const { _id, content, ...rest } = doc;
+  // 舊資料(接上內文欄位之前建立的文章)沒有 content 欄位，用空字串墊底，前端會再退回顯示摘要。
+  return { content: content ?? "", ...rest, _id: _id.toString() };
 }
 
 export async function listNews(): Promise<NewsItem[]> { // 取得所有新聞（後台用，含草稿），依建立時間新到舊排序
@@ -93,6 +95,15 @@ export async function listPublishedNews(): Promise<NewsItem[]> { // 取得已發
     .sort({ createdAt: -1 })
     .toArray();
   return docs.map(toNewsItem);
+}
+
+export async function getPublishedNewsById(id: string): Promise<NewsItem | null> { // 取得單篇已發布的新聞(文章詳情頁用)；id 格式不對或找不到就回傳 null
+  if (!ObjectId.isValid(id)) return null;
+  const db = await getDb();
+  const doc = await db
+    .collection<Omit<NewsItem, "_id">>("news")
+    .findOne({ _id: new ObjectId(id), status: "published" });
+  return doc ? toNewsItem(doc) : null;
 }
 
 export async function createNews(data: NewsInput): Promise<void> { // 新增一篇新聞
