@@ -3,16 +3,18 @@
 import { randomUUID } from "node:crypto"; // 匯入亂數 ID 產生器，用來命名上傳的圖片檔案
 import { mkdir, writeFile } from "node:fs/promises"; // 匯入檔案系統工具，本機開發時把圖片寫進 public/uploads
 import path from "node:path"; // 匯入路徑工具
-import { put } from "@vercel/blob"; // 匯入 Vercel Blob 用戶端，正式環境(部署到 Vercel)用它存圖片
+import { put } from "@vercel/blob"; // 匯入 Vercel Blob 用戶端，備用的雲端圖床
 import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
+import { isR2Configured, uploadToR2 } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳工具
 import {
   createHeroSlide, updateHeroSlide, deleteHeroSlide, nextHeroSlideOrder, type HeroSlideInput,
   createNews, updateNews, deleteNews, type NewsInput,
   createSchedule, updateSchedule, deleteSchedule, type ScheduleInput,
+  createPortfolioItem, updatePortfolioItem, deletePortfolioItem, nextPortfolioOrder, type PortfolioInput,
 } from "@/lib/db"; // 匯入資料存取層的 CRUD 函式與輸入型別
-import { tonePresets } from "@/lib/tone-presets"; // 匯入新聞配色預設清單
+import { tonePresets } from "@/lib/tone-presets"; // 匯入配色預設清單
 
 // Proxy 已經擋掉未登入的 /admin 請求，但 Server Function 是可以被單獨打到的獨立端點，
 // 所以每個會修改資料的 action 都要自己再驗證一次登入狀態，不能只依賴 Proxy。
@@ -41,9 +43,16 @@ function revalidateAfterScheduleChange() { // 賽程異動後，同時刷新後�
   revalidatePath("/");
 }
 
+function revalidateAfterPortfolioChange() { // 作品集異動後，同時刷新後台與前台作品集頁
+  revalidatePath("/admin");
+  revalidatePath("/portfolio");
+}
+
 // ---------- 圖片上傳 ----------
-// 本機開發(沒有設定 BLOB_READ_WRITE_TOKEN)時，圖片直接寫進專案的 public/uploads 資料夾；
-// 部署到 Vercel 後(有這組環境變數)，改存進 Vercel Blob 雲端圖床，避免圖片在唯讀檔案系統上消失。
+// 依序嘗試三種儲存方式，取第一個有設定好的:
+// 1. Cloudflare R2(有設定 R2_* 環境變數) —— 本機、Vercel 都能用，圖片不會因為換環境而消失
+// 2. Vercel Blob(有設定 BLOB_READ_WRITE_TOKEN)
+// 3. 本機檔案系統 public/uploads(開發時的最後備援，部署到 Vercel 等唯讀檔案系統的平台不能用這個)
 
 const ALLOWED_IMAGE_TYPES: Record<string, string> = { // 允許的圖片格式，及對應要儲存的副檔名
   "image/jpeg": "jpg",
@@ -72,7 +81,11 @@ export async function uploadImageAction(formData: FormData): Promise<string> { /
   const filename = `${randomUUID()}.${extension}`;
   const bytes = Buffer.from(await file.arrayBuffer());
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) { // 有設定 Vercel Blob 的權杖，代表在 Vercel 上執行
+  if (isR2Configured()) {
+    return uploadToR2(`uploads/${filename}`, bytes, file.type);
+  }
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) { // 有設定 Vercel Blob 的權杖
     const blob = await put(`uploads/${filename}`, bytes, {
       access: "public",
       contentType: file.type,
@@ -195,4 +208,41 @@ export async function deleteScheduleAction(id: string): Promise<void> { // 刪�
   await requireAdmin();
   await deleteSchedule(id);
   revalidateAfterScheduleChange();
+}
+
+// ---------- 作品集 ----------
+
+function portfolioFromForm(formData: FormData, order: number): PortfolioInput { // 把表單資料轉成資料庫要存的格式
+  const presetId = String(formData.get("tonePreset") ?? tonePresets[0].id);
+  const preset = tonePresets.find((p) => p.id === presetId) ?? tonePresets[0];
+  const photoSrc = String(formData.get("photoSrc") ?? "").trim();
+  return {
+    caption: String(formData.get("caption") ?? "").trim(),
+    category: String(formData.get("category") ?? "").trim(),
+    place: String(formData.get("place") ?? "").trim(),
+    date: String(formData.get("date") ?? "").trim(),
+    photo: photoSrc ? { src: photoSrc, alt: String(formData.get("photoAlt") ?? "").trim() } : null, // 沒有上傳照片就維持 null，前台會改用色塊+圖示
+    tone: { a: preset.a, b: preset.b, icon: preset.id },
+    order,
+  };
+}
+
+export async function createPortfolioAction(formData: FormData): Promise<void> { // 新增作品
+  await requireAdmin();
+  const order = await nextPortfolioOrder();
+  await createPortfolioItem(portfolioFromForm(formData, order));
+  revalidateAfterPortfolioChange();
+}
+
+export async function updatePortfolioAction(id: string, formData: FormData): Promise<void> { // 修改作品
+  await requireAdmin();
+  const order = Number(formData.get("order") ?? 0);
+  await updatePortfolioItem(id, portfolioFromForm(formData, order));
+  revalidateAfterPortfolioChange();
+}
+
+export async function deletePortfolioAction(id: string): Promise<void> { // 刪除作品
+  await requireAdmin();
+  await deletePortfolioItem(id);
+  revalidateAfterPortfolioChange();
 }

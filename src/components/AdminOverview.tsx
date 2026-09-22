@@ -1,24 +1,25 @@
 import type { ComponentType } from "react"; // 匯入 React 的元件型別，供圖示 props 使用
-import { stats, portfolio } from "@/lib/content"; // 匯入仍為靜態資料的統計數字與作品集
+import { stats } from "@/lib/content"; // 匯入仍為靜態資料的統計數字
 import { daysUntil, formatScheduleDate } from "@/lib/admin"; // 匯入計算距今天數、格式化日期的工具函式
 import type { AdminSection } from "./AdminSidebar"; // 匯入後台側邊欄分頁型別
 import { IconDoc, IconUpload, IconLayers, IconCalendar } from "./AdminIcons"; // 匯入待辦事項要用的各種圖示
-import type { HeroSlide, NewsItem, ScheduleItem } from "@/lib/db"; // 匯入首頁焦點、新聞、賽事的型別
-
-const uploadedCount = portfolio.filter((shot) => shot.photo).length; // 計算作品集中已上傳實際照片的數量
-const pendingCount = portfolio.length - uploadedCount; // 計算尚未上傳照片、仍用色卡佔位的數量
+import type { HeroSlide, NewsItem, ScheduleItem, PortfolioItem } from "@/lib/db"; // 匯入首頁焦點、新聞、賽事、作品集的型別
 
 export default function AdminOverview({ // 定義後台「總覽」頁面元件並預設匯出
   heroSlides, // 首頁焦點資料(來自 MongoDB)
   news, // 最新消息資料(來自 MongoDB)
   schedule, // 賽事資料(來自 MongoDB)
+  portfolio, // 作品集資料(來自 MongoDB)
   onNavigate, // 接收切換分頁用的回呼函式
 }: {
   heroSlides: HeroSlide[];
   news: NewsItem[];
   schedule: ScheduleItem[];
+  portfolio: PortfolioItem[];
   onNavigate: (section: AdminSection) => void;
 }) {
+  const uploadedCount = portfolio.filter((shot) => shot.photo).length; // 計算作品集中已上傳實際照片的數量
+  const pendingCount = portfolio.length - uploadedCount; // 計算尚未上傳照片、仍用色卡佔位的數量
   const draftNews = news.find((item) => item.status === "draft"); // 找出第一篇草稿(若有)
   const draftCount = news.length - news.filter((item) => item.status === "published").length; // 計算草稿篇數
   const upcomingSchedule = schedule.filter((item) => daysUntil(item.startDate) >= 0); // 只保留還沒過期的賽事(schedule 本身已依日期排序)

@@ -1,5 +1,4 @@
 import type { ComponentType } from "react"; // 匯入 React 元件型別，用來標註圖示元件的型別
-import { portfolio } from "@/lib/content"; // 匯入仍為靜態資料的作品集，用來顯示數量徽章
 import { logout } from "@/app/admin/login/actions"; // 匯入登出 Server Action
 import {
   IconGrid, // 總覽圖示
@@ -37,17 +36,19 @@ export default function AdminSidebar({
   heroCount, // 首頁焦點筆數(來自 MongoDB)
   newsCount, // 最新消息筆數(來自 MongoDB)
   scheduleCount, // 賽事筆數(來自 MongoDB)
+  portfolioCount, // 作品集筆數(來自 MongoDB)
 }: {
   active: AdminSection;
   onSelect: (section: AdminSection) => void;
   heroCount: number;
   newsCount: number;
   scheduleCount: number;
+  portfolioCount: number;
 }) {
   const contentNav: NavItem[] = [ // 「內容管理」分組的選單項目，數量來自父層傳入的真實資料
     { id: "hero", label: "首頁焦點", icon: IconLayers, count: heroCount },
     { id: "news", label: "最新消息", icon: IconDoc, count: newsCount },
-    { id: "portfolio", label: "作品集", icon: IconImage, count: portfolio.length },
+    { id: "portfolio", label: "作品集", icon: IconImage, count: portfolioCount },
     { id: "schedule", label: "賽事行事曆", icon: IconCalendar, count: scheduleCount },
   ];
   return ( // 回傳後台側邊欄的 JSX
@@ -72,7 +73,7 @@ export default function AdminSidebar({
           </div>
         </div>
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-gold/40 bg-gold/15 px-2.5 py-1 text-[10px] tracking-wide text-peach">
-          作品集・網站設定 尚未串接資料庫 {/* 提示這兩個分頁目前仍是介面預覽 */}
+          網站設定 尚未串接資料庫 {/* 提示這個分頁目前仍是介面預覽 */}
         </span>
       </div>
 

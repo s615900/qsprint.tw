@@ -9,7 +9,7 @@ import AdminNews from "@/components/AdminNews"; // 匯入最新消息管理分�
 import AdminPortfolio from "@/components/AdminPortfolio"; // 匯入作品集管理分頁元件
 import AdminSchedule from "@/components/AdminSchedule"; // 匯入賽程管理分頁元件
 import AdminSettings from "@/components/AdminSettings"; // 匯入網站設定分頁元件
-import type { HeroSlide, NewsItem, ScheduleItem } from "@/lib/db"; // 匯入三種已串接 MongoDB 的內容型別
+import type { HeroSlide, NewsItem, ScheduleItem, PortfolioItem } from "@/lib/db"; // 匯入四種已串接 MongoDB 的內容型別
 
 const sectionMeta: Record<AdminSection, { title: string; subtitle: string }> = { // 定義每個後台分頁對應的標題與副標題文字
   dashboard: { title: "總覽", subtitle: "青春止秒內容總覽與待辦事項" }, // 總覽分頁的標題文字
@@ -24,10 +24,12 @@ export default function AdminShell({ // 匯出後台主要版面元件，資料�
   heroSlides,
   news,
   schedule,
+  portfolio,
 }: {
   heroSlides: HeroSlide[];
   news: NewsItem[];
   schedule: ScheduleItem[];
+  portfolio: PortfolioItem[];
 }) {
   const [section, setSection] = useState<AdminSection>("dashboard"); // 目前選中的分頁狀態，預設為總覽
   const meta = sectionMeta[section]; // 依目前分頁取出對應的標題資訊
@@ -40,16 +42,17 @@ export default function AdminShell({ // 匯出後台主要版面元件，資料�
         heroCount={heroSlides.length}
         newsCount={news.length}
         scheduleCount={schedule.length}
+        portfolioCount={portfolio.length}
       /> {/* 側邊欄，傳入目前分頁、切換分頁的函式，與各分類的真實筆數 */}
       <div className="flex min-w-0 flex-1 flex-col"> {/* 右側主要內容區塊：垂直排列，可以收縮不溢出 */}
         <AdminTopbar title={meta.title} subtitle={meta.subtitle} /> {/* 頂部標題列，顯示目前分頁的標題與副標題 */}
         <div className="flex-1 px-7 py-6"> {/* 主要內容區塊，帶左右與上下內距 */}
           {section === "dashboard" && (
-            <AdminOverview heroSlides={heroSlides} news={news} schedule={schedule} onNavigate={setSection} />
+            <AdminOverview heroSlides={heroSlides} news={news} schedule={schedule} portfolio={portfolio} onNavigate={setSection} />
           )}
           {section === "hero" && <AdminHeroSlides slides={heroSlides} />} {/* 首頁焦點管理，吃真實資料 */}
           {section === "news" && <AdminNews news={news} />} {/* 最新消息管理，吃真實資料 */}
-          {section === "portfolio" && <AdminPortfolio />} {/* 作品集仍為介面預覽 */}
+          {section === "portfolio" && <AdminPortfolio portfolio={portfolio} />} {/* 作品集管理，吃真實資料 */}
           {section === "schedule" && <AdminSchedule schedule={schedule} />} {/* 賽事行事曆管理，吃真實資料 */}
           {section === "settings" && <AdminSettings />} {/* 網站設定仍為介面預覽 */}
         </div> {/* 結束主要內容區塊 */}

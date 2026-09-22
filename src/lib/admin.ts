@@ -13,3 +13,7 @@ export function formatScheduleDate(startDate: string, endDate: string): string {
   if (startDate === endDate) return start; // 單日賽事只顯示一個日期
   return `${start} – ${toMonthDay(endDate)}`;
 }
+
+export function formatDate(isoDate: string): string { // 把 "YYYY-MM-DD" 格式化成畫面顯示用的 "YYYY.MM.DD"
+  return isoDate.replaceAll("-", ".");
+}

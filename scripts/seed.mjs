@@ -155,6 +155,17 @@ const schedule = [
   { startDate: "2027-12-01", endDate: "2027-12-04", event: "116年屏東盃全國中小學田徑錦標賽", place: "屏東縣" },
 ];
 
+const portfolio = [
+  { caption: "大隊接力・交棒瞬間", category: "大隊接力", place: "臺北田徑場", date: "2026-04-20", photo: null, tone: { a: "#FFD699", b: "#D45757", icon: "baton" }, order: 0 },
+  { caption: "110公尺跨欄、破大會紀錄", category: "跨欄", place: "新北田徑場", date: "2026-04-15", photo: null, tone: { a: "#F8EFE2", b: "#D58D3F", icon: "hurdle" }, order: 1 },
+  { caption: "田徑跑道・分道線特寫", category: "田徑跑道", place: "桃園青埔田徑場", date: "2026-03-29", photo: { src: "/images/track-02-relay-baton.jpg", alt: "田徑跑道分道線特寫" }, tone: { a: "#FFB7C5", b: "#1E2430", icon: "lanes" }, order: 2 },
+  { caption: "頒獎典禮・大會紀錄", category: "頒獎典禮", place: "高雄國家體育場", date: "2026-03-15", photo: null, tone: { a: "#FFD699", b: "#766D63", icon: "podium" }, order: 3 },
+  { caption: "100公尺短跑・起跑瞬間", category: "短跑", place: "臺中洲際田徑場", date: "2026-02-28", photo: null, tone: { a: "#FDF6EC", b: "#D45757", icon: "blocks" }, order: 4 },
+  { caption: "撐竿跳高・過竿瞬間", category: "撐竿跳高", place: "新北田徑場", date: "2026-02-20", photo: null, tone: { a: "#FFB7C5", b: "#D58D3F", icon: "stopwatch" }, order: 5 },
+  { caption: "大隊接力・最後一棒衝線", category: "大隊接力", place: "臺北田徑場", date: "2026-04-20", photo: null, tone: { a: "#FFD699", b: "#D45757", icon: "tape" }, order: 6 },
+  { caption: "田徑場邊・選手賽前伸展", category: "賽前準備", place: "桃園青埔田徑場", date: "2026-03-29", photo: null, tone: { a: "#F8EFE2", b: "#1E2430", icon: "flags" }, order: 7 },
+];
+
 async function seedCollection(db, name, docs) {
   const collection = db.collection(name);
   const existing = await collection.countDocuments();
@@ -173,6 +184,7 @@ try {
   await seedCollection(db, "heroSlides", heroSlides);
   await seedCollection(db, "news", news);
   await seedCollection(db, "schedule", schedule);
+  await seedCollection(db, "portfolio", portfolio);
   console.log("種子資料處理完成。");
 } finally {
   await client.close();
