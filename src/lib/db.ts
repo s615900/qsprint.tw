@@ -65,6 +65,7 @@ export interface NewsItem { // 新聞文章，序列化給前端使用的型別
   meta: string;
   tone: { a: string; b: string; icon: IconId };
   image: { src: string; alt: string } | null; // 上傳的實際照片；沒有照片時前台會改用 tone 色塊+圖示呈現
+  featured: boolean; // 是否為首頁「精選報導」區塊要顯示的那一篇；同時間只會有一篇是 true
   status: NewsStatus;
   createdAt: string; // ISO 字串，用來排序與顯示
 }
@@ -72,9 +73,9 @@ export interface NewsItem { // 新聞文章，序列化給前端使用的型別
 export type NewsInput = Omit<NewsItem, "_id" | "createdAt">; // 新增/修改時由使用者填寫的欄位
 
 function toNewsItem(doc: WithId<Omit<NewsItem, "_id">>): NewsItem { // 把 Mongo 文件轉成前端可用的型別
-  const { _id, content, ...rest } = doc;
-  // 舊資料(接上內文欄位之前建立的文章)沒有 content 欄位，用空字串墊底，前端會再退回顯示摘要。
-  return { content: content ?? "", ...rest, _id: _id.toString() };
+  const { _id, content, featured, ...rest } = doc;
+  // 舊資料(接上內文/精選欄位之前建立的文章)沒有這兩個欄位，分別用空字串、false 墊底。
+  return { content: content ?? "", featured: featured ?? false, ...rest, _id: _id.toString() };
 }
 
 export async function listNews(): Promise<NewsItem[]> { // 取得所有新聞（後台用，含草稿），依建立時間新到舊排序
@@ -106,14 +107,28 @@ export async function getPublishedNewsById(id: string): Promise<NewsItem | null>
   return doc ? toNewsItem(doc) : null;
 }
 
+export async function getFeaturedNews(): Promise<NewsItem | null> { // 取得首頁「精選報導」要顯示的那篇已發布文章
+  const db = await getDb();
+  const doc = await db
+    .collection<Omit<NewsItem, "_id">>("news")
+    .findOne({ featured: true, status: "published" });
+  return doc ? toNewsItem(doc) : null;
+}
+
 export async function createNews(data: NewsInput): Promise<void> { // 新增一篇新聞
   const db = await getDb();
-  await db.collection<Omit<NewsItem, "_id">>("news").insertOne({ ...data, createdAt: new Date().toISOString() });
+  const collection = db.collection<Omit<NewsItem, "_id">>("news");
+  if (data.featured) await collection.updateMany({ featured: true }, { $set: { featured: false } }); // 同時間只能有一篇精選
+  await collection.insertOne({ ...data, createdAt: new Date().toISOString() });
 }
 
 export async function updateNews(id: string, data: NewsInput): Promise<void> { // 修改一篇新聞（不更動建立時間）
   const db = await getDb();
-  await db.collection<Omit<NewsItem, "_id">>("news").updateOne({ _id: new ObjectId(id) }, { $set: data });
+  const collection = db.collection<Omit<NewsItem, "_id">>("news");
+  if (data.featured) { // 同時間只能有一篇精選，先把「其他」文章的精選狀態取消
+    await collection.updateMany({ featured: true, _id: { $ne: new ObjectId(id) } }, { $set: { featured: false } });
+  }
+  await collection.updateOne({ _id: new ObjectId(id) }, { $set: data });
 }
 
 export async function deleteNews(id: string): Promise<void> { // 刪除一篇新聞

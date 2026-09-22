@@ -91,6 +91,11 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
                   </td>
                   <td className="max-w-[360px] border-b border-line px-4 py-3.5 font-semibold">
                     {row.title}
+                    {row.featured && ( // 有標記為首頁精選報導時顯示小標籤
+                      <span className="ml-1.5 rounded-full bg-coral/10 px-1.5 py-0.5 text-[10px] font-semibold text-coral">
+                        首頁精選
+                      </span>
+                    )}
                     <span className="mt-0.5 block truncate text-[11.5px] font-normal text-ink-soft">
                       {row.excerpt}
                     </span>
@@ -194,6 +199,15 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft">
+              <input
+                type="checkbox"
+                name="featured"
+                defaultChecked={modal.mode === "edit" ? modal.item.featured : false}
+                className="h-4 w-4 rounded border-line accent-gold"
+              />
+              設為首頁精選報導(同時間只能有一篇,勾選這篇會取消其他篇的精選狀態)
             </label>
             <button type="submit" className="mt-1.5 rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90">
               儲存

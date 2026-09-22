@@ -29,9 +29,10 @@ function revalidateAfterHeroChange() { // 首頁焦點異動後，同時刷新�
   revalidatePath("/");
 }
 
-function revalidateAfterNewsChange() { // 最新消息異動後，同時刷新後台、前台新聞列表頁與每一篇文章詳情頁
+function revalidateAfterNewsChange() { // 最新消息異動後，同時刷新後台、前台新聞列表頁、文章詳情頁，以及首頁(精選報導可能來自這裡)
   revalidatePath("/admin");
   revalidatePath("/news", "layout");
+  revalidatePath("/");
 }
 
 function revalidateAfterScheduleChange() { // 賽程異動後，同時刷新後台、前台賽程頁與首頁(賽程跑馬燈)
@@ -142,6 +143,7 @@ function newsFromForm(formData: FormData): NewsInput { // 把表單資料轉成�
     meta: String(formData.get("meta") ?? "").trim(),
     tone: { a: preset.a, b: preset.b, icon: preset.id },
     image: imageSrc ? { src: imageSrc, alt: String(formData.get("imageAlt") ?? "").trim() } : null, // 沒有上傳照片就維持 null，前台會改用色塊+圖示
+    featured: formData.get("featured") === "on", // 是否設為首頁精選報導
     status: formData.get("status") === "published" ? "published" : "draft",
   };
 }
