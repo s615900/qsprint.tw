@@ -135,12 +135,24 @@ const news = [
   },
 ];
 
+// 116 學年度(2027)實際賽事清單，startDate/endDate 一律用 "YYYY-MM-DD"，單日賽事兩者相同。
 const schedule = [
-  { date: "09.19 – 09.21", event: "新北市中等學校田徑錦標賽", place: "新北田徑場", order: 0 },
-  { date: "10.03 – 10.05", event: "全國大專校院田徑公開賽", place: "高雄國家體育場", order: 1 },
-  { date: "10.24", event: "樂活盃校際大隊接力邀請賽", place: "臺北田徑場", order: 2 },
-  { date: "11.14 – 11.15", event: "中區聯合運動會", place: "臺中洲際田徑場", order: 3 },
-  { date: "12.05", event: "城市青年田徑邀請賽", place: "桃園青埔田徑場", order: 4 },
+  { startDate: "2027-02-13", endDate: "2027-02-17", event: "2027年臺北市春季全國田徑公開賽", place: "臺北市" },
+  { startDate: "2027-02-21", endDate: "2027-02-26", event: "116年新北市青年盃全國田徑公開賽", place: "新北市" },
+  { startDate: "2027-03-08", endDate: "2027-03-13", event: "2027年港都盃全國田徑錦標賽", place: "高雄市" },
+  { startDate: "2027-03-21", endDate: "2027-03-21", event: "2027年(第3屆)南投日月潭國際撐竿跳高邀請賽", place: "南投縣" },
+  { startDate: "2027-03-23", endDate: "2027-03-23", event: "2027年(第31屆)南投國際室內撐竿跳高邀請賽", place: "南投縣" },
+  { startDate: "2027-03-26", endDate: "2027-03-28", event: "116年原住民運動會", place: "臺中市" },
+  { startDate: "2027-03-26", endDate: "2027-03-27", event: "116年全國大專校院田徑公開賽", place: "新北市" },
+  { startDate: "2027-04-18", endDate: "2027-04-22", event: "116年全國中等學校運動會 ★", place: "新北市" },
+  { startDate: "2027-05-02", endDate: "2027-05-05", event: "116年全國大專校院運動會 ★", place: "臺北市" },
+  { startDate: "2027-05-19", endDate: "2027-05-20", event: "116年全國小學田徑錦標賽", place: "基隆市" },
+  { startDate: "2027-06-04", endDate: "2027-06-05", event: "116年全國田徑錦標賽 ◆", place: "臺南市" },
+  { startDate: "2027-09-15", endDate: "2027-09-19", event: "2027年臺北市秋季全國田徑公開賽", place: "臺北市" },
+  { startDate: "2027-09-25", endDate: "2027-09-30", event: "116年新北城市盃全國田徑公開賽", place: "新北市" },
+  { startDate: "2027-11-03", endDate: "2027-11-06", event: "116年全國中等學校田徑錦標賽", place: "地點未定" },
+  { startDate: "2027-11-13", endDate: "2027-11-18", event: "116年全國運動會 ◆", place: "屏東縣" },
+  { startDate: "2027-12-01", endDate: "2027-12-04", event: "116年屏東盃全國中小學田徑錦標賽", place: "屏東縣" },
 ];
 
 async function seedCollection(db, name, docs) {

@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"; // 匯入 React 的元件型別，供圖示 props 使用
 import { stats, portfolio } from "@/lib/content"; // 匯入仍為靜態資料的統計數字與作品集
-import { daysUntil } from "@/lib/admin"; // 匯入計算距今天數的工具函式
+import { daysUntil, formatScheduleDate } from "@/lib/admin"; // 匯入計算距今天數、格式化日期的工具函式
 import type { AdminSection } from "./AdminSidebar"; // 匯入後台側邊欄分頁型別
 import { IconDoc, IconUpload, IconLayers, IconCalendar } from "./AdminIcons"; // 匯入待辦事項要用的各種圖示
 import type { HeroSlide, NewsItem, ScheduleItem } from "@/lib/db"; // 匯入首頁焦點、新聞、賽事的型別
@@ -21,8 +21,9 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
 }) {
   const draftNews = news.find((item) => item.status === "draft"); // 找出第一篇草稿(若有)
   const draftCount = news.length - news.filter((item) => item.status === "published").length; // 計算草稿篇數
-  const nextEvent = schedule[0]; // 取得賽程中的第一筆（最近一場）賽事
-  const nextEventDays = nextEvent ? daysUntil(nextEvent.date) : null; // 計算距離下一場賽事還有幾天(沒有賽事就不計算)
+  const upcomingSchedule = schedule.filter((item) => daysUntil(item.startDate) >= 0); // 只保留還沒過期的賽事(schedule 本身已依日期排序)
+  const nextEvent = upcomingSchedule[0]; // 取得最近的一場賽事
+  const nextEventDays = nextEvent ? daysUntil(nextEvent.startDate) : null; // 計算距離下一場賽事還有幾天(沒有賽事就不計算)
 
   return ( // 回傳畫面內容
     <div className="flex flex-col gap-6"> {/* 整頁垂直排列容器 */}
@@ -71,7 +72,7 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
                 icon={IconCalendar}
                 onClick={() => onNavigate("schedule")}
                 title="最近賽事即將開始"
-                detail={`${nextEvent.event}・${nextEvent.date}・${nextEvent.place}`}
+                detail={`${nextEvent.event}・${formatScheduleDate(nextEvent.startDate, nextEvent.endDate)}・${nextEvent.place}`}
                 tagLabel={`${nextEventDays} 天後`}
                 tagTone="soon"
               />
@@ -84,15 +85,15 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
             <p className="text-[11px] font-semibold uppercase tracking-wide text-gold">近期賽事</p> {/* 卡片小標籤 */}
             <h3 className="mt-1 text-[14px] font-bold">接下來的拍攝行程</h3> {/* 卡片標題 */}
             <div className="mt-3 flex flex-col divide-y divide-line"> {/* 賽事清單容器，項目間有分隔線 */}
-              {schedule.length === 0 ? (
+              {upcomingSchedule.length === 0 ? (
                 <p className="py-2.5 text-[12.5px] text-ink-soft">尚未新增任何賽事。</p>
               ) : (
-                schedule.slice(0, 3).map((item) => { // 只取賽程陣列的前 3 筆
-                  const days = daysUntil(item.date); // 計算此筆賽事距今天數
+                upcomingSchedule.slice(0, 3).map((item) => { // 只取最近的 3 場賽事
+                  const days = daysUntil(item.startDate); // 計算此筆賽事距今天數
                   return ( // 回傳該筆賽事的畫面
                     <div key={item._id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"> {/* 單筆賽事列，key 用 _id */}
                       <span className="font-clock w-16 flex-none rounded-md bg-paper-3 py-1 text-center text-[12px] tabular-nums"> {/* 日期標籤樣式 */}
-                        {item.date.split("–")[0].trim()} {/* 只取日期區間的起始日並去除前後空白 */}
+                        {formatScheduleDate(item.startDate, item.endDate).split("–")[0].trim()} {/* 只取日期區間的起始日並去除前後空白 */}
                       </span>
                       <div className="min-w-0 flex-1"> {/* 賽事文字資訊容器 */}
                         <p className="truncate text-[12.5px] font-semibold">{item.event}</p> {/* 賽事名稱，過長截斷 */}

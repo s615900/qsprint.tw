@@ -125,10 +125,10 @@ export async function deleteNews(id: string): Promise<void> { // 刪除一篇新
 
 export interface ScheduleItem { // 賽事，序列化給前端使用的型別
   _id: string;
-  date: string;
+  startDate: string; // 開始日期，格式 "YYYY-MM-DD"
+  endDate: string; // 結束日期，格式 "YYYY-MM-DD"；單日賽事跟 startDate 相同
   event: string;
   place: string;
-  order: number;
 }
 
 export type ScheduleInput = Omit<ScheduleItem, "_id">; // 新增/修改時使用的欄位
@@ -138,16 +138,10 @@ function toScheduleItem(doc: WithId<ScheduleInput>): ScheduleItem { // 把 Mongo
   return { _id: _id.toString(), ...rest };
 }
 
-export async function listSchedule(): Promise<ScheduleItem[]> { // 依排序取得所有賽事
+export async function listSchedule(): Promise<ScheduleItem[]> { // 依開始日期由近到遠取得所有賽事
   const db = await getDb();
-  const docs = await db.collection<ScheduleInput>("schedule").find().sort({ order: 1 }).toArray();
+  const docs = await db.collection<ScheduleInput>("schedule").find().sort({ startDate: 1 }).toArray();
   return docs.map(toScheduleItem);
-}
-
-export async function nextScheduleOrder(): Promise<number> { // 取得新增時該用的排序值（接在最後）
-  const db = await getDb();
-  const [last] = await db.collection<ScheduleInput>("schedule").find().sort({ order: -1 }).limit(1).toArray();
-  return (last?.order ?? -1) + 1;
 }
 
 export async function createSchedule(data: ScheduleInput): Promise<void> { // 新增一場賽事

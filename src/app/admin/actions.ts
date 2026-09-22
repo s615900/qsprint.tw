@@ -10,7 +10,7 @@ import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯�
 import {
   createHeroSlide, updateHeroSlide, deleteHeroSlide, nextHeroSlideOrder, type HeroSlideInput,
   createNews, updateNews, deleteNews, type NewsInput,
-  createSchedule, updateSchedule, deleteSchedule, nextScheduleOrder, type ScheduleInput,
+  createSchedule, updateSchedule, deleteSchedule, type ScheduleInput,
 } from "@/lib/db"; // 匯入資料存取層的 CRUD 函式與輸入型別
 import { tonePresets } from "@/lib/tone-presets"; // 匯入新聞配色預設清單
 
@@ -166,26 +166,26 @@ export async function deleteNewsAction(id: string): Promise<void> { // 刪除新
 
 // ---------- 賽事行事曆 ----------
 
-function scheduleFromForm(formData: FormData, order: number): ScheduleInput { // 把表單資料轉成資料庫要存的格式
+function scheduleFromForm(formData: FormData): ScheduleInput { // 把表單資料轉成資料庫要存的格式
+  const startDate = String(formData.get("startDate") ?? "").trim();
+  const endDate = String(formData.get("endDate") ?? "").trim();
   return {
-    date: String(formData.get("date") ?? "").trim(),
+    startDate,
+    endDate: endDate || startDate, // 沒填結束日期就當成單日賽事
     event: String(formData.get("event") ?? "").trim(),
     place: String(formData.get("place") ?? "").trim(),
-    order,
   };
 }
 
 export async function createScheduleAction(formData: FormData): Promise<void> { // 新增賽事
   await requireAdmin();
-  const order = await nextScheduleOrder();
-  await createSchedule(scheduleFromForm(formData, order));
+  await createSchedule(scheduleFromForm(formData));
   revalidateAfterScheduleChange();
 }
 
 export async function updateScheduleAction(id: string, formData: FormData): Promise<void> { // 修改賽事
   await requireAdmin();
-  const order = Number(formData.get("order") ?? 0);
-  await updateSchedule(id, scheduleFromForm(formData, order));
+  await updateSchedule(id, scheduleFromForm(formData));
   revalidateAfterScheduleChange();
 }
 

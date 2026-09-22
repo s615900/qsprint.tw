@@ -1,5 +1,6 @@
 import Eyebrow from "./Eyebrow"; // 匯入小標籤元件，用來標示區塊分類
 import type { ScheduleItem } from "@/lib/db"; // 匯入賽事的型別(資料來自 MongoDB)
+import { formatScheduleDate } from "@/lib/admin"; // 匯入日期格式化工具函式
 
 export default function ScheduleSection({ schedule }: { schedule: ScheduleItem[] }) { // 匯出賽事行事曆區塊元件，資料由父層傳入
   return ( // 回傳整個區塊的畫面結構
@@ -24,10 +25,10 @@ export default function ScheduleSection({ schedule }: { schedule: ScheduleItem[]
             className="flex flex-col gap-1.5 py-6 sm:flex-row sm:items-center sm:gap-8" // 單筆賽事列的排版樣式(手機直排、桌機橫排)
           >
             <span className="font-clock text-[0.85rem] tracking-widest text-ink/25 sm:w-10"> {/* 顯示月份的小字樣式 */}
-              {item.date.slice(0, 2)}月 {/* 取日期字串前兩碼作為月份數字，後面補「月」字 */}
+              {item.startDate.slice(5, 7)}月 {/* 取開始日期的月份部分，後面補「月」字 */}
             </span>
             <span className="font-clock text-[1.4rem] leading-none tracking-wide text-gold sm:w-52 sm:flex-none"> {/* 顯示完整日期範圍的樣式 */}
-              {item.date} {/* 完整日期字串 */}
+              {formatScheduleDate(item.startDate, item.endDate)} {/* 格式化後的日期範圍文字 */}
             </span>
             <div> {/* 賽事名稱與地點的容器 */}
               <h3 className="text-[1.05rem] font-bold">{item.event}</h3> {/* 賽事名稱標題 */}

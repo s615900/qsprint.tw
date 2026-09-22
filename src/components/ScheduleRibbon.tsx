@@ -1,5 +1,6 @@
 import Link from "next/link"; // 匯入 Next.js 頁面導覽連結元件
 import type { ScheduleItem } from "@/lib/db"; // 匯入賽事的型別(資料來自 MongoDB)
+import { formatScheduleDate } from "@/lib/admin"; // 匯入日期格式化工具函式
 
 export default function ScheduleRibbon({ schedule }: { schedule: ScheduleItem[] }) { // 定義並匯出首頁的賽程橫幅元件，資料由父層傳入
   return ( // 回傳橫幅整體的 JSX
@@ -30,7 +31,7 @@ export default function ScheduleRibbon({ schedule }: { schedule: ScheduleItem[] 
             >
               <div className="flex items-baseline justify-between gap-2"> {/* 日期與序號的橫向排列容器 */}
                 <span className="font-clock text-[1.4rem] leading-none tracking-wide text-ink">
-                  {item.date} {/* 顯示賽事日期 */}
+                  {formatScheduleDate(item.startDate, item.endDate)} {/* 顯示賽事日期 */}
                 </span>
                 <span className="font-clock text-[0.85rem] text-muted">
                   {String(index + 1).padStart(2, "0")} {/* 顯示兩位數序號 */}

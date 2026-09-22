@@ -1,7 +1,7 @@
 "use client"; // 標記為 Client Component，因為要處理新增/編輯視窗的開關狀態
 
 import { useState } from "react"; // 匯入狀態 hook
-import { daysUntil } from "@/lib/admin"; // 匯入計算距今剩餘天數的工具函式
+import { daysUntil, formatScheduleDate } from "@/lib/admin"; // 匯入計算距今剩餘天數、格式化日期的工具函式
 import { IconPencil, IconTrash } from "./AdminIcons"; // 匯入編輯與刪除圖示
 import AdminModal from "./AdminModal"; // 匯入共用的彈出視窗外框
 import type { ScheduleItem } from "@/lib/db"; // 匯入賽事的型別
@@ -21,7 +21,7 @@ export default function AdminSchedule({ schedule }: { schedule: ScheduleItem[] }
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-bold">賽事行事曆</h2>
-          <p className="mt-1 text-[12.5px] text-ink-soft">確定進場拍攝的賽事清單,倒數以今日日期計算。</p>
+          <p className="mt-1 text-[12.5px] text-ink-soft">確定進場拍攝的賽事清單,依日期由近到遠排序,倒數以今日日期計算。</p>
         </div>
         <button
           type="button"
@@ -51,13 +51,13 @@ export default function AdminSchedule({ schedule }: { schedule: ScheduleItem[] }
             </thead>
             <tbody>
               {schedule.map((item) => { // 走訪每一筆賽程資料
-                const days = daysUntil(item.date); // 計算距離該賽事還有幾天
+                const days = daysUntil(item.startDate); // 計算距離該賽事還有幾天
                 const isPast = days < 0; // 判斷賽事是否已過期
                 const isSoon = !isPast && days <= 14; // 判斷是否為 14 天內即將開始的賽事
                 return (
                   <tr key={item._id} className="text-[13px] hover:bg-paper-3">
                     <td className="font-clock border-b border-line px-4 py-3.5 text-[15px] tabular-nums">
-                      {item.date}
+                      {item.startDate.slice(0, 4)}.{formatScheduleDate(item.startDate, item.endDate)} {/* 表格內顯示年份，避免年份混淆 */}
                     </td>
                     <td className="border-b border-line px-4 py-3.5 font-semibold">{item.event}</td>
                     <td className="border-b border-line px-4 py-3.5 text-ink-soft">{item.place}</td>
@@ -113,17 +113,27 @@ export default function AdminSchedule({ schedule }: { schedule: ScheduleItem[] }
             onSubmit={() => setModal(null)} // 送出後立即關閉視窗
             className="flex flex-col gap-3"
           >
-            {modal.mode === "edit" && <input type="hidden" name="order" defaultValue={modal.item.order} />}
-            <label className={labelClass}>
-              日期(格式如 09.19 或 09.19 – 09.21)
-              <input
-                name="date"
-                placeholder="09.19 – 09.21"
-                defaultValue={modal.mode === "edit" ? modal.item.date : ""}
-                required
-                className={inputClass}
-              />
-            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={labelClass}>
+                開始日期
+                <input
+                  type="date"
+                  name="startDate"
+                  defaultValue={modal.mode === "edit" ? modal.item.startDate : ""}
+                  required
+                  className={inputClass}
+                />
+              </label>
+              <label className={labelClass}>
+                結束日期(單日賽事留空即可)
+                <input
+                  type="date"
+                  name="endDate"
+                  defaultValue={modal.mode === "edit" ? modal.item.endDate : ""}
+                  className={inputClass}
+                />
+              </label>
+            </div>
             <label className={labelClass}>
               賽事名稱
               <input
