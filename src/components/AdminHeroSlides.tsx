@@ -8,6 +8,7 @@ import AdminImageField from "./AdminImageField"; // 匯入圖片上傳欄位元�
 import { IconPencil, IconTrash } from "./AdminIcons"; // 匯入編輯、刪除圖示
 import type { HeroSlide } from "@/lib/db"; // 匯入首頁焦點的型別
 import { createHeroSlideAction, deleteHeroSlideAction, updateHeroSlideAction } from "@/app/admin/actions"; // 匯入首頁焦點的 Server Actions
+import { pageLinkOptions } from "@/lib/page-links"; // 匯入「按鈕連結」下拉選單的頁面清單
 
 const inputClass = // 表單輸入框共用樣式
   "w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-gold/40";
@@ -146,13 +147,23 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
             <input type="hidden" name="ctaLabel" defaultValue={modal.mode === "edit" ? modal.slide.ctaLabel : "閱讀全文 →"} />
             <label className={labelClass}>
               按鈕連結(點擊這則焦點會前往的頁面)
-              <input
+              <select
                 name="ctaHref"
-                placeholder="/news"
                 defaultValue={modal.mode === "edit" ? modal.slide.ctaHref : "/news"}
                 required
                 className={inputClass}
-              />
+              >
+                {pageLinkOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+                {/* 既有資料若連到清單以外的頁面，額外補一個選項避免存檔時被改掉 */}
+                {modal.mode === "edit" &&
+                  !pageLinkOptions.some((option) => option.value === modal.slide.ctaHref) && (
+                    <option value={modal.slide.ctaHref}>{modal.slide.ctaHref}</option>
+                  )}
+              </select>
             </label>
             <AdminImageField
               srcName="imageSrc"
