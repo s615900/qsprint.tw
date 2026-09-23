@@ -124,7 +124,10 @@ export async function uploadPortfolioPhotoAction(formData: FormData): Promise<Po
   const watermarked = await applyWatermark(bytes, format);
   const extension = format === "jpeg" ? "jpg" : format;
   const filename = `${randomUUID()}.${extension}`;
-  const src = await storeImage(filename, watermarked, file.type, "portfolio");
+  // 相簿 ID 由前端先產生好傳進來，讓同一本相簿的照片都存進 R2 底下同一個資料夾(portfolio/{albumId}/...)，方便在 R2 介面裡用資料夾檢視。
+  const albumId = String(formData.get("albumId") ?? "").trim();
+  const prefix = albumId ? `portfolio/${albumId}` : "portfolio";
+  const src = await storeImage(filename, watermarked, file.type, prefix);
   return { src, alt: "" };
 }
 
@@ -269,7 +272,9 @@ function albumFromForm(formData: FormData): PortfolioAlbumInput { // 把表單�
 
 export async function createPortfolioAlbumAction(formData: FormData): Promise<void> { // 新增相簿
   await requireAdmin();
-  await createPortfolioAlbum(albumFromForm(formData));
+  // 沿用照片上傳時前端已經產生好的相簿 ID，讓相簿的 _id 跟 R2 裡存放照片的資料夾名稱一致。
+  const albumId = String(formData.get("albumId") ?? "").trim();
+  await createPortfolioAlbum(albumFromForm(formData), albumId || undefined);
   revalidateAfterPortfolioChange();
 }
 

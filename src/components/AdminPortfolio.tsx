@@ -15,7 +15,13 @@ const inputClass = // 表單輸入框共用樣式
   "w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-gold/40";
 const labelClass = "flex flex-col gap-1 text-[12.5px] font-semibold text-ink-soft"; // 表單欄位標籤共用樣式
 
-type ModalState = { mode: "add" } | { mode: "edit"; album: PortfolioAlbum } | null; // 視窗狀態:關閉、新增、或編輯某一本相簿
+type ModalState = { mode: "add"; albumId: string } | { mode: "edit"; album: PortfolioAlbum } | null; // 視窗狀態:關閉、新增、或編輯某一本相簿
+
+function generateAlbumId(): string { // 產生一組 24 碼 16 進位字串，格式跟 MongoDB 的 ObjectId 相容，新增相簿時先產生好，讓照片可以在相簿還沒存檔前就先上傳到對應的 R2 資料夾
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export default function AdminPortfolio({ portfolio }: { portfolio: PortfolioAlbum[] }) { // 後台「作品集」管理頁面元件，資料由父層傳入
   const [modal, setModal] = useState<ModalState>(null); // 目前彈出視窗的狀態
@@ -32,7 +38,7 @@ export default function AdminPortfolio({ portfolio }: { portfolio: PortfolioAlbu
         </div>
         <button
           type="button"
-          onClick={() => setModal({ mode: "add" })} // 點擊開啟新增視窗
+          onClick={() => setModal({ mode: "add", albumId: generateAlbumId() })} // 點擊開啟新增視窗，先產生好相簿 ID
           className="rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90"
         >
           + 新增相簿
@@ -99,6 +105,7 @@ export default function AdminPortfolio({ portfolio }: { portfolio: PortfolioAlbu
             onSubmit={() => setModal(null)} // 送出後立即關閉視窗
             className="flex flex-col gap-3"
           >
+            {modal.mode === "add" && <input type="hidden" name="albumId" value={modal.albumId} />} {/* 新增時把先產生好的相簿 ID 一起送出，讓資料庫的 _id 跟 R2 資料夾名稱一致 */}
             <label className={labelClass}>
               相簿標題
               <input
@@ -141,7 +148,11 @@ export default function AdminPortfolio({ portfolio }: { portfolio: PortfolioAlbu
                 className={inputClass}
               />
             </label>
-            <AdminAlbumPhotos name="photos" defaultPhotos={modal.mode === "edit" ? modal.album.photos : []} />
+            <AdminAlbumPhotos
+              name="photos"
+              albumId={modal.mode === "add" ? modal.albumId : modal.album._id}
+              defaultPhotos={modal.mode === "edit" ? modal.album.photos : []}
+            />
             <label className={labelClass}>
               插圖配色(相簿裡一張照片都沒有時使用)
               <select

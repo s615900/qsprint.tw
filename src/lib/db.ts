@@ -216,11 +216,12 @@ export async function getPortfolioAlbumById(id: string): Promise<PortfolioAlbum 
   return doc ? toPortfolioAlbum(doc) : null;
 }
 
-export async function createPortfolioAlbum(data: PortfolioAlbumInput): Promise<void> { // 新增一本相簿
+export async function createPortfolioAlbum(data: PortfolioAlbumInput, id?: string): Promise<void> { // 新增一本相簿；id 是前台先產生好的 24 碼 16 進位字串(讓上傳照片時可以先知道相簿 ID，存進 R2 對應的資料夾)
   const db = await getDb();
+  const doc = { ...data, createdAt: new Date().toISOString() };
   await db
     .collection<Omit<PortfolioAlbum, "_id">>("portfolio")
-    .insertOne({ ...data, createdAt: new Date().toISOString() });
+    .insertOne(id && ObjectId.isValid(id) ? { _id: new ObjectId(id), ...doc } : doc);
 }
 
 export async function updatePortfolioAlbum(id: string, data: PortfolioAlbumInput): Promise<void> { // 修改一本相簿(不更動建立時間)

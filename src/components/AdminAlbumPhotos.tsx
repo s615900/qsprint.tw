@@ -8,9 +8,11 @@ import type { PortfolioPhoto } from "@/lib/db"; // 匯入相簿照片的型別
 
 export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次選多張照片上傳，並逐張顯示縮圖、可個別刪除
   name, // 隱藏欄位的 name，表單送出時會帶著目前的照片清單(JSON 字串)
+  albumId, // 這本相簿的 ID，上傳照片時會一起帶給伺服器，讓照片存進 R2 對應的資料夾(portfolio/{albumId}/...)
   defaultPhotos = [], // 編輯既有相簿時，帶入已經有的照片
 }: {
   name: string;
+  albumId: string;
   defaultPhotos?: PortfolioPhoto[];
 }) {
   const [photos, setPhotos] = useState<PortfolioPhoto[]>(defaultPhotos); // 目前相簿裡的照片清單，第一張是封面
@@ -29,6 +31,7 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
       try {
         const formData = new FormData();
         formData.set("file", files[i]);
+        formData.set("albumId", albumId);
         uploaded.push(await uploadPortfolioPhotoAction(formData));
       } catch (err) {
         setError(err instanceof Error ? `${files[i].name}: ${err.message}` : `${files[i].name} 上傳失敗`);
