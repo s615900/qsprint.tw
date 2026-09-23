@@ -4,7 +4,6 @@ import { notFound } from "next/navigation"; // 匯入「找不到頁面」的處
 import Eyebrow from "@/components/Eyebrow"; // 匯入小標籤元件
 import PhotoTile from "@/components/PhotoTile"; // 匯入照片卡片元件
 import ArtTile from "@/components/ArtTile"; // 匯入以色塊＋圖示呈現的替代插圖元件
-import ParallaxImage from "@/components/ParallaxImage"; // 匯入具視差效果的圖片元件
 import { getPublishedNewsById } from "@/lib/db"; // 匯入依 id 讀取單篇已發布新聞的函式
 
 export const dynamic = "force-dynamic"; // 內容來自資料庫，強制每次請求都重新渲染，避免建置時就把資料寫死或需要連上資料庫
@@ -44,13 +43,11 @@ export default async function NewsArticlePage({ // 匯出新聞文章詳情頁�
       </Link>
 
       <div className="mt-6 aspect-[16/9] overflow-hidden rounded-lg"> {/* 文章主圖容器 */}
-        <ParallaxImage speed={0.4}> {/* 以 0.4 倍速度做視差效果 */}
-          {article.image ? ( // 有上傳照片就用照片，否則用色塊+圖示代替
-            <PhotoTile src={article.image.src} alt={article.image.alt} priority />
-          ) : (
-            <ArtTile toneA={article.tone.a} toneB={article.tone.b} icon={article.tone.icon} />
-          )}
-        </ParallaxImage>
+        {article.image ? ( // 有上傳照片就用照片，否則用色塊+圖示代替；用 contain 完整顯示，不裁切內容
+          <PhotoTile src={article.image.src} alt={article.image.alt} priority fit="contain" />
+        ) : (
+          <ArtTile toneA={article.tone.a} toneB={article.tone.b} icon={article.tone.icon} />
+        )}
       </div>
 
       <Eyebrow className="mt-7">{article.tag}</Eyebrow> {/* 顯示文章分類標籤 */}

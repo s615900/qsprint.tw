@@ -34,13 +34,13 @@ export default function AlbumGallery({ photos }: { photos: PortfolioPhoto[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-px bg-ink sm:grid-cols-3 lg:grid-cols-4"> {/* 照片牆格線容器 */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"> {/* 照片牆格線容器；照片張數不是欄數倍數時，最後一列會留白而不是黑底 */}
         {photos.map((photo, index) => (
           <button
             key={photo.src}
             type="button"
             onClick={() => setActiveIndex(index)} // 點擊縮圖開啟全螢幕檢視器，並定位到這張照片
-            className="relative aspect-[4/5] overflow-hidden bg-paper"
+            className="relative aspect-[4/5] overflow-hidden rounded-sm bg-paper-3"
           >
             <PhotoTile src={photo.src} alt={photo.alt || `照片 ${index + 1}`} />
           </button>
