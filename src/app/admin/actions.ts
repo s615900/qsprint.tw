@@ -7,7 +7,7 @@ import { put } from "@vercel/blob"; // 匯入 Vercel Blob 用戶端，備用的�
 import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
-import { isR2Configured, uploadToR2 } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳工具
+import { isR2Configured, uploadToR2, listR2Objects } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳、列出既有物件工具
 import { applyWatermark } from "@/lib/watermark"; // 匯入浮水印處理工具
 import {
   createHeroSlide, updateHeroSlide, deleteHeroSlide, nextHeroSlideOrder, type HeroSlideInput,
@@ -129,6 +129,13 @@ export async function uploadPortfolioPhotoAction(formData: FormData): Promise<Po
   const prefix = albumId ? `portfolio/${albumId}` : "portfolio";
   const src = await storeImage(filename, watermarked, file.type, prefix);
   return { src, alt: "" };
+}
+
+export async function listExistingPortfolioPhotosAction(): Promise<PortfolioPhoto[]> { // 列出 R2 裡所有已經上傳過的作品集照片，供後台「從既有照片挑選」功能使用，不用每次都重新上傳
+  await requireAdmin();
+  if (!isR2Configured()) return []; // 沒設定 R2(例如本機沒接、或退回本機檔案系統儲存)就沒有既有照片可以挑
+  const objects = await listR2Objects("portfolio/");
+  return objects.map((o) => ({ src: o.src, alt: "" }));
 }
 
 // ---------- 首頁焦點 ----------
