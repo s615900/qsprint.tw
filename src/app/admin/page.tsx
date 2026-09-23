@@ -1,5 +1,5 @@
 import AdminShell from "@/components/AdminShell"; // 匯入後台主要版面的 Client Component
-import { listHeroSlides, listNews, listSchedule, listPortfolio } from "@/lib/db"; // 匯入從 MongoDB 讀取資料的函式
+import { listHeroSlides, listNews, listSchedule, listPortfolioAlbums } from "@/lib/db"; // 匯入從 MongoDB 讀取資料的函式
 
 // 後台一定要看到最新資料，強制每次請求都重新渲染，避免建置時就把資料寫死或需要連上資料庫
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export default async function AdminPage() { // 匯出管理後台頁面(Server C
     listHeroSlides(),
     listNews(),
     listSchedule(),
-    listPortfolio(),
+    listPortfolioAlbums(),
   ]);
 
   return (

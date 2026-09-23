@@ -1,4 +1,4 @@
-// 首頁焦點(HeroSlide)、最新消息(NewsItem)、賽事行事曆(ScheduleItem)、作品集(PortfolioItem)已改由 MongoDB 提供資料，
+// 首頁焦點(HeroSlide)、最新消息(NewsItem)、賽事行事曆(ScheduleItem)、作品集(PortfolioAlbum)已改由 MongoDB 提供資料，
 // 對應型別與 CRUD 函式請見 src/lib/db.ts；這裡只保留仍為靜態資料的內容。
 
 export const stats = [ // 匯出首頁/關於頁使用的統計數字資料

@@ -174,49 +174,61 @@ export async function deleteSchedule(id: string): Promise<void> { // 刪除一�
   await db.collection("schedule").deleteOne({ _id: new ObjectId(id) });
 }
 
-// ---------- 作品集 (Portfolio) ----------
+// ---------- 作品集 (Portfolio，以相簿為單位) ----------
 
-export interface PortfolioItem { // 作品集單張照片，序列化給前端使用的型別
-  _id: string;
-  caption: string; // 照片說明文字
-  category: string; // 賽事類別(如「大隊接力」「跨欄」)，前台用來篩選
-  place: string; // 拍攝地點，前台也用來篩選
-  date: string; // 拍攝日期，格式 "YYYY-MM-DD"，畫面顯示時會轉成 "YYYY.MM.DD"
-  photo: { src: string; alt: string } | null; // 上傳的實際照片；沒有照片時前台會改用 tone 色塊+圖示呈現
-  tone: { a: string; b: string; icon: IconId };
-  order: number;
+export interface PortfolioPhoto { // 相簿裡的單張照片
+  src: string; // 圖片網址(已加上浮水印)
+  alt: string; // 替代文字
 }
 
-export type PortfolioInput = Omit<PortfolioItem, "_id">; // 新增/修改時使用的欄位
+export interface PortfolioAlbum { // 作品集相簿，序列化給前端使用的型別
+  _id: string;
+  title: string; // 相簿標題，如「2026年新北國際田徑公開賽」
+  category: string; // 賽事類別，前台用來篩選
+  place: string; // 拍攝地點，前台也用來篩選
+  date: string; // 賽事日期，格式 "YYYY-MM-DD"
+  photos: PortfolioPhoto[]; // 相簿內所有照片，第一張當作封面
+  tone: { a: string; b: string; icon: IconId }; // 一張照片都還沒有時，前台用這個色塊+圖示呈現封面
+  createdAt: string; // ISO 字串，備用
+}
 
-function toPortfolioItem(doc: WithId<PortfolioInput>): PortfolioItem { // 把 Mongo 文件轉成前端可用的型別
+export type PortfolioAlbumInput = Omit<PortfolioAlbum, "_id" | "createdAt">; // 新增/修改時使用的欄位
+
+function toPortfolioAlbum(doc: WithId<Omit<PortfolioAlbum, "_id">>): PortfolioAlbum { // 把 Mongo 文件轉成前端可用的型別
   const { _id, ...rest } = doc;
   return { _id: _id.toString(), ...rest };
 }
 
-export async function listPortfolio(): Promise<PortfolioItem[]> { // 依排序取得所有作品
+export async function listPortfolioAlbums(): Promise<PortfolioAlbum[]> { // 依賽事日期由近到遠取得所有相簿
   const db = await getDb();
-  const docs = await db.collection<PortfolioInput>("portfolio").find().sort({ order: 1 }).toArray();
-  return docs.map(toPortfolioItem);
+  const docs = await db
+    .collection<Omit<PortfolioAlbum, "_id">>("portfolio")
+    .find()
+    .sort({ date: -1 })
+    .toArray();
+  return docs.map(toPortfolioAlbum);
 }
 
-export async function nextPortfolioOrder(): Promise<number> { // 取得新增時該用的排序值（接在最後）
+export async function getPortfolioAlbumById(id: string): Promise<PortfolioAlbum | null> { // 取得單一相簿(相簿詳情頁用)；id 格式不對或找不到就回傳 null
+  if (!ObjectId.isValid(id)) return null;
   const db = await getDb();
-  const [last] = await db.collection<PortfolioInput>("portfolio").find().sort({ order: -1 }).limit(1).toArray();
-  return (last?.order ?? -1) + 1;
+  const doc = await db.collection<Omit<PortfolioAlbum, "_id">>("portfolio").findOne({ _id: new ObjectId(id) });
+  return doc ? toPortfolioAlbum(doc) : null;
 }
 
-export async function createPortfolioItem(data: PortfolioInput): Promise<void> { // 新增一張作品
+export async function createPortfolioAlbum(data: PortfolioAlbumInput): Promise<void> { // 新增一本相簿
   const db = await getDb();
-  await db.collection<PortfolioInput>("portfolio").insertOne(data);
+  await db
+    .collection<Omit<PortfolioAlbum, "_id">>("portfolio")
+    .insertOne({ ...data, createdAt: new Date().toISOString() });
 }
 
-export async function updatePortfolioItem(id: string, data: PortfolioInput): Promise<void> { // 修改一張作品
+export async function updatePortfolioAlbum(id: string, data: PortfolioAlbumInput): Promise<void> { // 修改一本相簿(不更動建立時間)
   const db = await getDb();
-  await db.collection<PortfolioInput>("portfolio").updateOne({ _id: new ObjectId(id) }, { $set: data });
+  await db.collection<Omit<PortfolioAlbum, "_id">>("portfolio").updateOne({ _id: new ObjectId(id) }, { $set: data });
 }
 
-export async function deletePortfolioItem(id: string): Promise<void> { // 刪除一張作品
+export async function deletePortfolioAlbum(id: string): Promise<void> { // 刪除一本相簿
   const db = await getDb();
   await db.collection("portfolio").deleteOne({ _id: new ObjectId(id) });
 }

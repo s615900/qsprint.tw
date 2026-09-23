@@ -27,6 +27,8 @@
 # 後台上傳的圖片(本機檔案系統，不進版本控制)
 /public/uploads/*
 !/public/uploads/.gitkeep
+/public/portfolio/*
+!/public/portfolio/.gitkeep
 
 # debug
 npm-debug.log*

@@ -9,7 +9,7 @@ import AdminNews from "@/components/AdminNews"; // 匯入最新消息管理分�
 import AdminPortfolio from "@/components/AdminPortfolio"; // 匯入作品集管理分頁元件
 import AdminSchedule from "@/components/AdminSchedule"; // 匯入賽程管理分頁元件
 import AdminSettings from "@/components/AdminSettings"; // 匯入網站設定分頁元件
-import type { HeroSlide, NewsItem, ScheduleItem, PortfolioItem } from "@/lib/db"; // 匯入四種已串接 MongoDB 的內容型別
+import type { HeroSlide, NewsItem, ScheduleItem, PortfolioAlbum } from "@/lib/db"; // 匯入四種已串接 MongoDB 的內容型別
 
 const sectionMeta: Record<AdminSection, { title: string; subtitle: string }> = { // 定義每個後台分頁對應的標題與副標題文字
   dashboard: { title: "總覽", subtitle: "青春止秒內容總覽與待辦事項" }, // 總覽分頁的標題文字
@@ -29,7 +29,7 @@ export default function AdminShell({ // 匯出後台主要版面元件，資料�
   heroSlides: HeroSlide[];
   news: NewsItem[];
   schedule: ScheduleItem[];
-  portfolio: PortfolioItem[];
+  portfolio: PortfolioAlbum[];
 }) {
   const [section, setSection] = useState<AdminSection>("dashboard"); // 目前選中的分頁狀態，預設為總覽
   const meta = sectionMeta[section]; // 依目前分頁取出對應的標題資訊

@@ -3,23 +3,23 @@ import { stats } from "@/lib/content"; // 匯入仍為靜態資料的統計數�
 import { daysUntil, formatScheduleDate } from "@/lib/admin"; // 匯入計算距今天數、格式化日期的工具函式
 import type { AdminSection } from "./AdminSidebar"; // 匯入後台側邊欄分頁型別
 import { IconDoc, IconUpload, IconLayers, IconCalendar } from "./AdminIcons"; // 匯入待辦事項要用的各種圖示
-import type { HeroSlide, NewsItem, ScheduleItem, PortfolioItem } from "@/lib/db"; // 匯入首頁焦點、新聞、賽事、作品集的型別
+import type { HeroSlide, NewsItem, ScheduleItem, PortfolioAlbum } from "@/lib/db"; // 匯入首頁焦點、新聞、賽事、作品集相簿的型別
 
 export default function AdminOverview({ // 定義後台「總覽」頁面元件並預設匯出
   heroSlides, // 首頁焦點資料(來自 MongoDB)
   news, // 最新消息資料(來自 MongoDB)
   schedule, // 賽事資料(來自 MongoDB)
-  portfolio, // 作品集資料(來自 MongoDB)
+  portfolio, // 作品集相簿資料(來自 MongoDB)
   onNavigate, // 接收切換分頁用的回呼函式
 }: {
   heroSlides: HeroSlide[];
   news: NewsItem[];
   schedule: ScheduleItem[];
-  portfolio: PortfolioItem[];
+  portfolio: PortfolioAlbum[];
   onNavigate: (section: AdminSection) => void;
 }) {
-  const uploadedCount = portfolio.filter((shot) => shot.photo).length; // 計算作品集中已上傳實際照片的數量
-  const pendingCount = portfolio.length - uploadedCount; // 計算尚未上傳照片、仍用色卡佔位的數量
+  const totalPhotos = portfolio.reduce((sum, album) => sum + album.photos.length, 0); // 所有相簿的照片總數
+  const emptyAlbumCount = portfolio.filter((album) => album.photos.length === 0).length; // 計算還沒有任何照片的相簿數量
   const draftNews = news.find((item) => item.status === "draft"); // 找出第一篇草稿(若有)
   const draftCount = news.length - news.filter((item) => item.status === "published").length; // 計算草稿篇數
   const upcomingSchedule = schedule.filter((item) => daysUntil(item.startDate) >= 0); // 只保留還沒過期的賽事(schedule 本身已依日期排序)
@@ -52,14 +52,16 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
                 tagTone="muted"
               />
             )}
-            <TodoRow
-              icon={IconUpload}
-              onClick={() => onNavigate("portfolio")}
-              title={`${pendingCount} 張作品尚未上傳原始檔`}
-              detail={`目前以色卡佔位・作品集僅 ${uploadedCount}/${portfolio.length} 已上傳實際照片`}
-              tagLabel="待上傳"
-              tagTone="muted"
-            />
+            {emptyAlbumCount > 0 && ( // 有相簿還沒放照片才顯示這一列
+              <TodoRow
+                icon={IconUpload}
+                onClick={() => onNavigate("portfolio")}
+                title={`${emptyAlbumCount} 本相簿還沒有照片`}
+                detail={`目前以色卡佔位・作品集共 ${portfolio.length} 本相簿、${totalPhotos} 張照片`}
+                tagLabel="待上傳"
+                tagTone="muted"
+              />
+            )}
             <TodoRow
               icon={IconLayers}
               onClick={() => onNavigate("hero")}
@@ -120,7 +122,7 @@ export default function AdminOverview({ // 定義後台「總覽」頁面元件�
             <div className="mt-3 grid grid-cols-2 gap-2.5"> {/* 兩欄格線容器 */}
               <CountTile value={heroSlides.length} label="首頁焦點" /> {/* 顯示首頁輪播則數 */}
               <CountTile value={news.length} label={`最新消息(${draftCount} 草稿)`} /> {/* 顯示新聞則數與草稿數 */}
-              <CountTile value={portfolio.length} label={`作品(${uploadedCount} 已上傳)`} /> {/* 顯示作品總數與已上傳數 */}
+              <CountTile value={portfolio.length} label={`相簿(共 ${totalPhotos} 張照片)`} /> {/* 顯示相簿總數與照片總數 */}
               <CountTile value={schedule.length} label="賽事行程" /> {/* 顯示賽程總數 */}
             </div>
           </div>

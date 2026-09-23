@@ -8,11 +8,13 @@ import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
 import { isR2Configured, uploadToR2 } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳工具
+import { applyWatermark } from "@/lib/watermark"; // 匯入浮水印處理工具
 import {
   createHeroSlide, updateHeroSlide, deleteHeroSlide, nextHeroSlideOrder, type HeroSlideInput,
   createNews, updateNews, deleteNews, type NewsInput,
   createSchedule, updateSchedule, deleteSchedule, type ScheduleInput,
-  createPortfolioItem, updatePortfolioItem, deletePortfolioItem, nextPortfolioOrder, type PortfolioInput,
+  createPortfolioAlbum, updatePortfolioAlbum, deletePortfolioAlbum,
+  type PortfolioAlbumInput, type PortfolioPhoto,
 } from "@/lib/db"; // 匯入資料存取層的 CRUD 函式與輸入型別
 import { tonePresets } from "@/lib/tone-presets"; // 匯入配色預設清單
 
@@ -43,9 +45,9 @@ function revalidateAfterScheduleChange() { // 賽程異動後，同時刷新後�
   revalidatePath("/");
 }
 
-function revalidateAfterPortfolioChange() { // 作品集異動後，同時刷新後台與前台作品集頁
+function revalidateAfterPortfolioChange() { // 作品集異動後，同時刷新後台、前台作品集列表頁與每一本相簿的詳情頁
   revalidatePath("/admin");
-  revalidatePath("/portfolio");
+  revalidatePath("/portfolio", "layout");
 }
 
 // ---------- 圖片上傳 ----------
@@ -60,9 +62,29 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = { // 允許的圖片格式�
   "image/webp": "webp",
   "image/gif": "gif",
 };
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 圖片大小上限:8MB
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 一般圖片(首頁焦點、最新消息)大小上限:8MB
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024; // 作品集照片是實際交付成品，上限放寬到 20MB
 
-export async function uploadImageAction(formData: FormData): Promise<string> { // 上傳一張圖片，回傳可公開存取的路徑
+async function storeImage(filename: string, bytes: Buffer, contentType: string, prefix: string): Promise<string> { // 依序嘗試三種儲存方式，把檔案存起來並回傳可公開存取的網址
+  const key = `${prefix}/${filename}`;
+
+  if (isR2Configured()) { // 1. Cloudflare R2 —— 本機、Vercel 都能用，圖片不會因為換環境而消失
+    return uploadToR2(key, bytes, contentType);
+  }
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) { // 2. Vercel Blob
+    const blob = await put(key, bytes, { access: "public", contentType });
+    return blob.url;
+  }
+
+  // 3. 本機檔案系統(開發時的最後備援，部署到 Vercel 等唯讀檔案系統的平台不能用這個)
+  const dir = path.join(process.cwd(), "public", prefix);
+  await mkdir(dir, { recursive: true }); // 資料夾不存在就先建立
+  await writeFile(path.join(dir, filename), bytes);
+  return `/${key}`;
+}
+
+export async function uploadImageAction(formData: FormData): Promise<string> { // 上傳一張圖片(首頁焦點/最新消息用，不加浮水印)，回傳可公開存取的路徑
   await requireAdmin();
 
   const file = formData.get("file");
@@ -80,23 +102,30 @@ export async function uploadImageAction(formData: FormData): Promise<string> { /
   // 檔名由伺服器產生(不採用使用者原始檔名)，避免路徑穿越或檔名衝突等問題。
   const filename = `${randomUUID()}.${extension}`;
   const bytes = Buffer.from(await file.arrayBuffer());
+  return storeImage(filename, bytes, file.type, "uploads");
+}
 
-  if (isR2Configured()) {
-    return uploadToR2(`uploads/${filename}`, bytes, file.type);
+export async function uploadPortfolioPhotoAction(formData: FormData): Promise<PortfolioPhoto> { // 上傳一張作品集照片，自動加上浮水印，回傳可公開存取的網址
+  await requireAdmin();
+
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    throw new Error("沒有收到檔案。");
+  }
+  const format = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : file.type === "image/jpeg" ? "jpeg" : null;
+  if (!format) {
+    throw new Error("只接受 JPG、PNG 或 WEBP 格式的照片。");
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    throw new Error("照片檔案不能超過 20MB。");
   }
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) { // 有設定 Vercel Blob 的權杖
-    const blob = await put(`uploads/${filename}`, bytes, {
-      access: "public",
-      contentType: file.type,
-    });
-    return blob.url;
-  }
-
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true }); // 資料夾不存在就先建立
-  await writeFile(path.join(uploadsDir, filename), bytes);
-  return `/uploads/${filename}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const watermarked = await applyWatermark(bytes, format);
+  const extension = format === "jpeg" ? "jpg" : format;
+  const filename = `${randomUUID()}.${extension}`;
+  const src = await storeImage(filename, watermarked, file.type, "portfolio");
+  return { src, alt: "" };
 }
 
 // ---------- 首頁焦點 ----------
@@ -210,39 +239,48 @@ export async function deleteScheduleAction(id: string): Promise<void> { // 刪�
   revalidateAfterScheduleChange();
 }
 
-// ---------- 作品集 ----------
+// ---------- 作品集(相簿) ----------
 
-function portfolioFromForm(formData: FormData, order: number): PortfolioInput { // 把表單資料轉成資料庫要存的格式
+function albumFromForm(formData: FormData): PortfolioAlbumInput { // 把表單資料轉成資料庫要存的格式
   const presetId = String(formData.get("tonePreset") ?? tonePresets[0].id);
   const preset = tonePresets.find((p) => p.id === presetId) ?? tonePresets[0];
-  const photoSrc = String(formData.get("photoSrc") ?? "").trim();
+
+  let photos: PortfolioPhoto[] = []; // 相簿內的照片清單，由前端在上傳完成後組成 JSON 字串傳進來
+  try {
+    const raw = JSON.parse(String(formData.get("photos") ?? "[]"));
+    if (Array.isArray(raw)) {
+      photos = raw.filter(
+        (p): p is PortfolioPhoto => p && typeof p.src === "string" && typeof p.alt === "string"
+      );
+    }
+  } catch {
+    photos = []; // 格式不對就當作沒有照片，不要讓整個表單送出失敗
+  }
+
   return {
-    caption: String(formData.get("caption") ?? "").trim(),
+    title: String(formData.get("title") ?? "").trim(),
     category: String(formData.get("category") ?? "").trim(),
     place: String(formData.get("place") ?? "").trim(),
     date: String(formData.get("date") ?? "").trim(),
-    photo: photoSrc ? { src: photoSrc, alt: String(formData.get("photoAlt") ?? "").trim() } : null, // 沒有上傳照片就維持 null，前台會改用色塊+圖示
+    photos,
     tone: { a: preset.a, b: preset.b, icon: preset.id },
-    order,
   };
 }
 
-export async function createPortfolioAction(formData: FormData): Promise<void> { // 新增作品
+export async function createPortfolioAlbumAction(formData: FormData): Promise<void> { // 新增相簿
   await requireAdmin();
-  const order = await nextPortfolioOrder();
-  await createPortfolioItem(portfolioFromForm(formData, order));
+  await createPortfolioAlbum(albumFromForm(formData));
   revalidateAfterPortfolioChange();
 }
 
-export async function updatePortfolioAction(id: string, formData: FormData): Promise<void> { // 修改作品
+export async function updatePortfolioAlbumAction(id: string, formData: FormData): Promise<void> { // 修改相簿
   await requireAdmin();
-  const order = Number(formData.get("order") ?? 0);
-  await updatePortfolioItem(id, portfolioFromForm(formData, order));
+  await updatePortfolioAlbum(id, albumFromForm(formData));
   revalidateAfterPortfolioChange();
 }
 
-export async function deletePortfolioAction(id: string): Promise<void> { // 刪除作品
+export async function deletePortfolioAlbumAction(id: string): Promise<void> { // 刪除相簿
   await requireAdmin();
-  await deletePortfolioItem(id);
+  await deletePortfolioAlbum(id);
   revalidateAfterPortfolioChange();
 }
