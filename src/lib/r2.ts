@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"; // 匯入 S3 相容用戶端；Cloudflare R2 完全相容 S3 API
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"; // 匯入 S3 相容用戶端；Cloudflare R2 完全相容 S3 API；ListObjectsV2Command 搭配 Delimiter 可以列出「資料夾」(CommonPrefixes)
 
 type R2Config = NonNullable<ReturnType<typeof r2Config>>;
 
@@ -68,4 +68,32 @@ export async function listR2Objects(prefix: string): Promise<R2Object[]> { // �
 
   objects.sort((a, b) => b.lastModified.localeCompare(a.lastModified)); // 新上傳的排前面，方便找到剛拍的照片
   return objects;
+}
+
+export async function listR2Folders(prefix: string): Promise<string[]> { // 列出某個前置字元底下的「資料夾」名稱(不含路徑、不含結尾斜線)，供後台「挑選既有照片」依資料夾篩選使用
+  const config = r2Config();
+  if (!config) return [];
+
+  const client = r2Client(config);
+  const folders: string[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const res = await client.send(
+      new ListObjectsV2Command({
+        Bucket: config.bucket,
+        Prefix: prefix,
+        Delimiter: "/", // 只列出下一層，不遞迴進子資料夾，CommonPrefixes 回傳的就是「資料夾」
+        ContinuationToken: continuationToken,
+      })
+    );
+    for (const common of res.CommonPrefixes ?? []) {
+      if (!common.Prefix) continue;
+      const name = common.Prefix.slice(prefix.length, -1); // 去掉前置字元與結尾的 "/"，只留資料夾名稱
+      if (name) folders.push(name);
+    }
+    continuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return folders.sort((a, b) => a.localeCompare(b, "zh-Hant"));
 }

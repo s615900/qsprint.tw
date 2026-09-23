@@ -7,7 +7,7 @@ import { put } from "@vercel/blob"; // 匯入 Vercel Blob 用戶端，備用的�
 import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
-import { isR2Configured, uploadToR2, listR2Objects } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳、列出既有物件工具
+import { isR2Configured, uploadToR2, listR2Objects, listR2Folders } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳、列出既有物件/資料夾工具
 import { applyWatermark } from "@/lib/watermark"; // 匯入浮水印處理工具
 import {
   createHeroSlide, updateHeroSlide, deleteHeroSlide, nextHeroSlideOrder, type HeroSlideInput,
@@ -131,10 +131,17 @@ export async function uploadPortfolioPhotoAction(formData: FormData): Promise<Po
   return { src, alt: "" };
 }
 
-export async function listExistingPortfolioPhotosAction(): Promise<PortfolioPhoto[]> { // 列出 R2 裡所有已經上傳過的作品集照片，供後台「從既有照片挑選」功能使用，不用每次都重新上傳
+export async function listPortfolioFoldersAction(): Promise<string[]> { // 列出 R2 的 portfolio/ 底下有哪些資料夾(相簿 ID、或手動建立的資料夾)，供「從既有照片挑選」依資料夾篩選
+  await requireAdmin();
+  if (!isR2Configured()) return [];
+  return listR2Folders("portfolio/");
+}
+
+export async function listExistingPortfolioPhotosAction(folder?: string): Promise<PortfolioPhoto[]> { // 列出 R2 裡已經上傳過的作品集照片，供後台「從既有照片挑選」功能使用，不用每次都重新上傳；有指定 folder 就只列該資料夾底下的照片，否則列出全部
   await requireAdmin();
   if (!isR2Configured()) return []; // 沒設定 R2(例如本機沒接、或退回本機檔案系統儲存)就沒有既有照片可以挑
-  const objects = await listR2Objects("portfolio/");
+  const prefix = folder ? `portfolio/${folder}/` : "portfolio/";
+  const objects = await listR2Objects(prefix);
   return objects.map((o) => ({ src: o.src, alt: "" }));
 }
 
