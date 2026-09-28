@@ -20,6 +20,9 @@ export default function AdminAbout({ about }: { about: AboutPage }) { // 後台�
   function addStat() { // 新增一列空白統計
     setStats((prev) => [...prev, { value: "", label: "", key: Date.now() }]);
   }
+  function updateStat(key: number, patch: Partial<AboutStat>) { // 修改某一列的數值或說明
+    setStats((prev) => prev.map((stat) => (stat.key === key ? { ...stat, ...patch } : stat)));
+  }
   function removeStat(key: number) { // 刪除一列統計
     setStats((prev) => prev.filter((stat) => stat.key !== key));
   }
@@ -65,8 +68,23 @@ export default function AdminAbout({ about }: { about: AboutPage }) { // 後台�
           <p className={labelClass}>底部統計數字(全部刪除則不顯示)</p>
           {stats.map((stat) => (
             <div key={stat.key} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-1.5">
-              <input name="statValue" defaultValue={stat.value} placeholder="87+" aria-label="數值" className={inputClass} />
-              <input name="statLabel" defaultValue={stat.label} placeholder="說明" aria-label="說明" className={inputClass} />
+              {/* 用受控輸入框：React 送出表單後會把非受控欄位重設回初始值，畫面會跳回舊數字 */}
+              <input
+                name="statValue"
+                value={stat.value}
+                onChange={(e) => updateStat(stat.key, { value: e.target.value })}
+                placeholder="87+"
+                aria-label="數值"
+                className={inputClass}
+              />
+              <input
+                name="statLabel"
+                value={stat.label}
+                onChange={(e) => updateStat(stat.key, { label: e.target.value })}
+                placeholder="說明"
+                aria-label="說明"
+                className={inputClass}
+              />
               <button
                 type="button"
                 onClick={() => removeStat(stat.key)}
