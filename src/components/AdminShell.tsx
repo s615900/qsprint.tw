@@ -3,7 +3,7 @@
 import { useState } from "react"; // 匯入 React 的狀態 hook
 import AdminSidebar, { type AdminSection } from "@/components/AdminSidebar"; // 匯入側邊欄元件與「目前分頁」型別
 import AdminTopbar from "@/components/AdminTopbar"; // 匯入頂部標題列元件
-import AdminHeroSlides from "@/components/AdminHeroSlides"; // 匯入首頁焦點管理分頁元件
+import AdminHeroSlides from "@/components/AdminHeroSlides"; // 匯入首頁輪播圖管理分頁元件
 import AdminNews from "@/components/AdminNews"; // 匯入最新消息管理分頁元件
 import AdminPortfolio from "@/components/AdminPortfolio"; // 匯入作品集管理分頁元件
 import AdminSchedule from "@/components/AdminSchedule"; // 匯入賽程管理分頁元件
@@ -11,7 +11,7 @@ import AdminSettings from "@/components/AdminSettings"; // 匯入網站設定分
 import type { HeroSlide, NewsItem, ScheduleItem, PortfolioAlbum } from "@/lib/db"; // 匯入四種已串接 MongoDB 的內容型別
 
 const sectionMeta: Record<AdminSection, { title: string; subtitle: string }> = { // 定義每個後台分頁對應的標題與副標題文字
-  hero: { title: "首頁焦點", subtitle: "管理首頁輪播的精選報導順序" }, // 首頁焦點分頁的標題文字
+  hero: { title: "首頁輪播圖", subtitle: "首頁滿版輪播的圖片、連結與顯示順序" }, // 首頁焦點分頁的標題文字
   news: { title: "最新消息", subtitle: "賽事直擊、幕後故事與公告文章" }, // 最新消息分頁的標題文字
   portfolio: { title: "作品集", subtitle: "賽事攝影作品與素材上傳狀態" }, // 作品集分頁的標題文字
   schedule: { title: "賽事行事曆", subtitle: "確定進場拍攝的賽事清單" }, // 賽事行事曆分頁的標題文字

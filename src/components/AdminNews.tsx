@@ -1,23 +1,15 @@
-"use client"; // 標記為 Client Component，因為使用了 state 與新增/編輯視窗
+"use client"; // 標記為 Client Component，因為使用了篩選狀態
 
 import { useState } from "react"; // 匯入 React 的狀態 hook
 import { IconPencil, IconTrash } from "./AdminIcons"; // 匯入編輯與刪除圖示
-import AdminModal from "./AdminModal"; // 匯入共用的彈出視窗外框
-import AdminImageField from "./AdminImageField"; // 匯入圖片上傳欄位元件
+import Link from "next/link"; // 匯入頁面導覽連結元件，新增/編輯改到獨立頁面
 import type { NewsItem } from "@/lib/db"; // 匯入新聞資料的型別
-import { createNewsAction, deleteNewsAction, updateNewsAction } from "@/app/admin/actions"; // 匯入新聞的 Server Actions
-import { tonePresets } from "@/lib/tone-presets"; // 匯入配色預設清單
-
-const inputClass = // 表單輸入框共用樣式
-  "w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-gold/40";
-const labelClass = "flex flex-col gap-1 text-[12.5px] font-semibold text-ink-soft"; // 表單欄位標籤共用樣式
+import { deleteNewsAction } from "@/app/admin/actions"; // 匯入刪除新聞的 Server Action
 
 type Filter = "all" | "published" | "draft"; // 定義篩選條件
-type ModalState = { mode: "add" } | { mode: "edit"; item: NewsItem } | null; // 視窗狀態:關閉、新增、或編輯某一筆
 
 export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並匯出後台「最新消息」管理元件，資料由父層傳入
   const [filter, setFilter] = useState<Filter>("all"); // 目前選擇的篩選條件，預設全部
-  const [modal, setModal] = useState<ModalState>(null); // 目前彈出視窗的狀態
   const visibleRows = news.filter((row) => filter === "all" || row.status === filter); // 依篩選條件過濾出要顯示的列
 
   const publishedCount = news.filter((r) => r.status === "published").length; // 計算已發布篇數
@@ -32,13 +24,12 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
             共 {news.length} 篇,{draftCount} 篇草稿待發布。 {/* 顯示總篇數與草稿數量 */}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setModal({ mode: "add" })} // 點擊開啟新增視窗
+        <Link
+          href="/admin/news/new" // 前往新增消息頁
           className="rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90"
         >
           + 新增消息
-        </button>
+        </Link>
       </div>
 
       <div className="flex gap-1.5"> {/* 篩選分頁按鈕的橫向排列容器 */}
@@ -103,13 +94,13 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
                   <td className="border-b border-line px-4 py-3.5 text-ink-soft">{row.meta}</td>
                   <td className="border-b border-line px-4 py-3.5">
                     <div className="flex justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setModal({ mode: "edit", item: row })} // 點擊開啟編輯視窗，帶入這筆資料
+                      <Link
+                        href={`/admin/news/${row._id}`} // 前往這篇的編輯頁
+                        aria-label={`編輯「${row.title}」`}
                         className="rounded-md p-1.5 text-ink-soft hover:bg-paper-3 hover:text-ink"
                       >
                         <IconPencil className="h-3.5 w-3.5" />
-                      </button>
+                      </Link>
                       <form
                         action={deleteNewsAction.bind(null, row._id)} // 綁定要刪除的 id
                         onSubmit={(e) => { // 送出前先跳出確認視窗
@@ -129,92 +120,6 @@ export default function AdminNews({ news }: { news: NewsItem[] }) { // 定義並
         </div>
       )}
 
-      {modal && ( // 有開啟視窗時才渲染
-        <AdminModal title={modal.mode === "add" ? "新增消息" : "編輯消息"} onClose={() => setModal(null)}>
-          <form
-            action={modal.mode === "add" ? createNewsAction : updateNewsAction.bind(null, modal.item._id)}
-            onSubmit={() => setModal(null)} // 送出後立即關閉視窗
-            className="flex flex-col gap-3"
-          >
-            <label className={labelClass}>
-              狀態
-              <select
-                name="status"
-                defaultValue={modal.mode === "edit" ? modal.item.status : "draft"}
-                className={inputClass}
-              >
-                <option value="draft">草稿</option>
-                <option value="published">已發布</option>
-              </select>
-            </label>
-            <label className={labelClass}>
-              分類標籤
-              <input name="tag" defaultValue={modal.mode === "edit" ? modal.item.tag : ""} required className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              標題
-              <input name="title" defaultValue={modal.mode === "edit" ? modal.item.title : ""} required className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              摘要(顯示在列表與卡片上的簡短說明)
-              <textarea
-                name="excerpt"
-                defaultValue={modal.mode === "edit" ? modal.item.excerpt : ""}
-                required
-                rows={3}
-                className={inputClass}
-              />
-            </label>
-            <label className={labelClass}>
-              內文(文章詳情頁的完整內容,分段請空一行)
-              <textarea
-                name="content"
-                defaultValue={modal.mode === "edit" ? modal.item.content || modal.item.excerpt : ""}
-                required
-                rows={8}
-                className={inputClass}
-              />
-            </label>
-            <label className={labelClass}>
-              發布資訊(顯示於文章下方,如「2026.04.20 · 田徑場邊記事」)
-              <input name="meta" defaultValue={modal.mode === "edit" ? modal.item.meta : ""} required className={inputClass} />
-            </label>
-            <AdminImageField
-              srcName="imageSrc"
-              altName="imageAlt"
-              label="照片(選填,沒有上傳就用下方插圖配色代替)"
-              defaultSrc={modal.mode === "edit" ? (modal.item.image?.src ?? "") : ""}
-              defaultAlt={modal.mode === "edit" ? (modal.item.image?.alt ?? "") : ""}
-            />
-            <label className={labelClass}>
-              插圖配色(沒有上傳照片時使用)
-              <select
-                name="tonePreset"
-                defaultValue={modal.mode === "edit" ? modal.item.tone.icon : tonePresets[0].id}
-                className={inputClass}
-              >
-                {tonePresets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft">
-              <input
-                type="checkbox"
-                name="featured"
-                defaultChecked={modal.mode === "edit" ? modal.item.featured : false}
-                className="h-4 w-4 rounded border-line accent-gold"
-              />
-              設為首頁精選報導(同時間只能有一篇,勾選這篇會取消其他篇的精選狀態)
-            </label>
-            <button type="submit" className="mt-1.5 rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90">
-              儲存
-            </button>
-          </form>
-        </AdminModal>
-      )}
     </div>
   );
 }

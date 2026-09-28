@@ -153,20 +153,8 @@ export default function AdminPortfolio({ portfolio }: { portfolio: PortfolioAlbu
               albumId={modal.mode === "add" ? modal.albumId : modal.album._id}
               defaultPhotos={modal.mode === "edit" ? modal.album.photos : []}
             />
-            <label className={labelClass}>
-              插圖配色(相簿裡一張照片都沒有時使用)
-              <select
-                name="tonePreset"
-                defaultValue={modal.mode === "edit" ? modal.album.tone.icon : tonePresets[0].id}
-                className={inputClass}
-              >
-                {tonePresets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {/* 插圖配色不開放選擇，沿用既有值(新增時用預設第一組)，相簿沒有照片時前台仍用它當底圖 */}
+            <input type="hidden" name="tonePreset" defaultValue={modal.mode === "edit" ? modal.album.tone.icon : tonePresets[0].id} />
             <button type="submit" className="mt-1.5 rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90">
               儲存
             </button>

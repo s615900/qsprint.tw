@@ -6,6 +6,8 @@ import path from "node:path"; // 匯入路徑工具
 import { put } from "@vercel/blob"; // 匯入 Vercel Blob 用戶端，備用的雲端圖床
 import { cookies } from "next/headers"; // 匯入 cookies 存取工具
 import { revalidatePath } from "next/cache"; // 匯入按路徑刷新快取的函式
+import { redirect } from "next/navigation"; // 匯入導頁函式
+import { sanitizeRichText } from "@/lib/rich-text"; // 匯入文章內文 HTML 過濾工具
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from "@/lib/auth"; // 匯入登入驗證相關函式
 import { isR2Configured, uploadToR2, listR2Objects, listR2Folders } from "@/lib/r2"; // 匯入 Cloudflare R2 上傳、列出既有物件/資料夾工具
 import { applyWatermark } from "@/lib/watermark"; // 匯入浮水印處理工具
@@ -148,36 +150,35 @@ export async function listExistingPortfolioPhotosAction(folder?: string): Promis
 // ---------- 首頁焦點 ----------
 
 function heroSlideFromForm(formData: FormData, order: number): HeroSlideInput { // 把表單資料轉成資料庫要存的格式
+  const title = String(formData.get("title") ?? "").trim();
   return {
-    tag: String(formData.get("tag") ?? "").trim(),
-    titleLines: String(formData.get("titleLines") ?? "")
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean), // 一行一句標題，過濾掉空白行
-    description: String(formData.get("description") ?? "").trim(),
-    author: String(formData.get("author") ?? "").trim(),
-    date: String(formData.get("date") ?? "").trim(),
-    readTime: String(formData.get("readTime") ?? "").trim(),
-    ctaLabel: String(formData.get("ctaLabel") ?? "").trim(),
-    ctaHref: String(formData.get("ctaHref") ?? "").trim(),
+    title,
     image: {
       src: String(formData.get("imageSrc") ?? "").trim(),
-      alt: String(formData.get("imageAlt") ?? "").trim(),
+      alt: String(formData.get("imageAlt") ?? "").trim() || title, // 沒填替代文字就用標題
     },
+    href: String(formData.get("href") ?? "").trim(),
+    visible: formData.get("visible") !== "hidden",
     order,
   };
 }
 
-export async function createHeroSlideAction(formData: FormData): Promise<void> { // 新增首頁焦點
+function orderFromForm(formData: FormData): number | null { // 讀取表單填的順序，沒填或不是數字回傳 null
+  const raw = String(formData.get("order") ?? "").trim();
+  const value = Number(raw);
+  return raw !== "" && Number.isFinite(value) ? value : null;
+}
+
+export async function createHeroSlideAction(formData: FormData): Promise<void> { // 新增首頁輪播圖
   await requireAdmin();
-  const order = await nextHeroSlideOrder();
+  const order = orderFromForm(formData) ?? (await nextHeroSlideOrder()); // 沒填順序就排在最後
   await createHeroSlide(heroSlideFromForm(formData, order));
   revalidateAfterHeroChange();
 }
 
-export async function updateHeroSlideAction(id: string, formData: FormData): Promise<void> { // 修改首頁焦點
+export async function updateHeroSlideAction(id: string, formData: FormData): Promise<void> { // 修改首頁輪播圖
   await requireAdmin();
-  const order = Number(formData.get("order") ?? 0);
+  const order = orderFromForm(formData) ?? (await nextHeroSlideOrder());
   await updateHeroSlide(id, heroSlideFromForm(formData, order));
   revalidateAfterHeroChange();
 }
@@ -198,7 +199,7 @@ function newsFromForm(formData: FormData): NewsInput { // 把表單資料轉成�
     tag: String(formData.get("tag") ?? "").trim(),
     title: String(formData.get("title") ?? "").trim(),
     excerpt: String(formData.get("excerpt") ?? "").trim(),
-    content: String(formData.get("content") ?? "").trim(),
+    content: sanitizeRichText(String(formData.get("content") ?? "").trim()), // 文字編輯器送來的 HTML，存檔前先過濾不安全的標籤
     meta: String(formData.get("meta") ?? "").trim(),
     tone: { a: preset.a, b: preset.b, icon: preset.id },
     image: imageSrc ? { src: imageSrc, alt: String(formData.get("imageAlt") ?? "").trim() } : null, // 沒有上傳照片就維持 null，前台會改用色塊+圖示
@@ -211,12 +212,14 @@ export async function createNewsAction(formData: FormData): Promise<void> { // �
   await requireAdmin();
   await createNews(newsFromForm(formData));
   revalidateAfterNewsChange();
+  redirect("/admin?tab=news"); // 儲存後回到後台最新消息列表
 }
 
 export async function updateNewsAction(id: string, formData: FormData): Promise<void> { // 修改新聞
   await requireAdmin();
   await updateNews(id, newsFromForm(formData));
   revalidateAfterNewsChange();
+  redirect("/admin?tab=news"); // 儲存後回到後台最新消息列表
 }
 
 export async function deleteNewsAction(id: string): Promise<void> { // 刪除新聞

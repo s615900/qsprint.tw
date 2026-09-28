@@ -14,9 +14,12 @@ export const metadata: Metadata = { // 匯出符合 Next.js 規範的 metadata �
 
 export default function RootLayout({ children }: LayoutProps<"/">) { // 匯出根版面元件，接收 children 作為要包裹的頁面內容
   return ( // 回傳整個 HTML 結構
-    <html lang="zh-TW"> {/* 根 html 標籤，設定語系為繁體中文(台灣) */}
-      <head> {/* 網頁的 head 區塊，放置中繼資料與外部資源連結 */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" /> {/* 預先建立與 Google Fonts API 網域的連線，加速字型載入 */}
+    // <html> 與 <head> 裡不能有空白文字節點，同一行標籤後面接註解會產生空白並造成 hydration 錯誤，所以註解都放在獨立一行
+    // 根 html 標籤，設定語系為繁體中文(台灣)；head 放置中繼資料與外部資源連結
+    <html lang="zh-TW">
+      <head>
+        {/* 預先建立與 Google Fonts API 網域的連線，加速字型載入 */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect" // 預先建立連線
           href="https://fonts.gstatic.com" // 目標網域為實際存放字型檔的 gstatic

@@ -5,6 +5,7 @@ import Eyebrow from "@/components/Eyebrow"; // 匯入小標籤元件
 import PhotoTile from "@/components/PhotoTile"; // 匯入照片卡片元件
 import ArtTile from "@/components/ArtTile"; // 匯入以色塊＋圖示呈現的替代插圖元件
 import { getPublishedNewsById } from "@/lib/db"; // 匯入依 id 讀取單篇已發布新聞的函式
+import { sanitizeRichText, toRichTextHtml } from "@/lib/rich-text"; // 匯入內文 HTML 轉換與過濾工具
 
 export const dynamic = "force-dynamic"; // 內容來自資料庫，強制每次請求都重新渲染，避免建置時就把資料寫死或需要連上資料庫
 
@@ -28,10 +29,8 @@ export default async function NewsArticlePage({ // 匯出新聞文章詳情頁�
   const article = await getPublishedNewsById(id);
   if (!article) notFound(); // 找不到文章或文章還是草稿，顯示 404
 
-  const paragraphs = (article.content || article.excerpt) // 舊文章沒有內文時，退回顯示摘要
-    .split(/\n\s*\n/) // 把內文用空行拆成多個段落
-    .map((p) => p.trim())
-    .filter(Boolean);
+  // 舊文章沒有內文時退回顯示摘要；純文字內文轉成段落，顯示前再過濾一次 HTML
+  const contentHtml = sanitizeRichText(toRichTextHtml(article.content || article.excerpt));
 
   return ( // 回傳文章詳情頁的畫面結構
     <article className="mx-auto max-w-3xl px-5 py-12 sm:px-8 sm:py-16"> {/* 文章容器，置中並限制最大寬度 */}
@@ -56,11 +55,7 @@ export default async function NewsArticlePage({ // 匯出新聞文章詳情頁�
       </h1>
       <p className="mt-3 font-clock text-[0.85rem] tracking-wide text-muted">{article.meta}</p> {/* 發布資訊 */}
 
-      <div className="mt-8 flex flex-col gap-5 text-[1.05rem] leading-relaxed text-ink-soft"> {/* 內文段落容器 */}
-        {paragraphs.map((paragraph, index) => ( // 逐段渲染內文
-          <p key={index}>{paragraph}</p>
-        ))}
-      </div>
+      <div className="rich-content mt-8" dangerouslySetInnerHTML={{ __html: contentHtml }} /> {/* 內文(文字編輯器排好的格式) */}
     </article>
   );
 }

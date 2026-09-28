@@ -4,31 +4,39 @@ import type { IconId } from "@/components/ArtTile"; // 匯入圖示 ID 型別，
 
 // ---------- 首頁焦點 (Hero Slides) ----------
 
-export interface HeroSlide { // 首頁輪播投影片，序列化給前端使用的型別（_id 為字串）
+export interface HeroSlide { // 首頁輪播圖，序列化給前端使用的型別（_id 為字串）
   _id: string;
-  tag: string;
-  titleLines: string[];
-  description: string;
-  author: string;
-  date: string;
-  readTime: string;
-  ctaLabel: string;
-  ctaHref: string;
+  title: string; // 標題，後台辨識用，前台不顯示
   image: { src: string; alt: string };
-  order: number;
+  href: string; // 點擊照片前往的網址，可填站內路徑(/news)或外部網址(https://...)，空字串代表不連結
+  visible: boolean; // 狀態：顯示或隱藏
+  order: number; // 順序，數字小的排前面
 }
 
 export type HeroSlideInput = Omit<HeroSlide, "_id">; // 新增/修改時使用的欄位（不含 _id）
 
-function toHeroSlide(doc: WithId<HeroSlideInput>): HeroSlide { // 把 Mongo 文件轉成前端可用的型別
-  const { _id, ...rest } = doc;
-  return { _id: _id.toString(), ...rest };
+// 舊版首頁焦點文件還留有 titleLines、ctaHref 等欄位，讀取時轉成新欄位，不用另外搬資料
+type StoredHeroSlide = Partial<HeroSlideInput> & { titleLines?: string[]; ctaHref?: string; image: HeroSlide["image"]; order: number };
+
+function toHeroSlide(doc: WithId<StoredHeroSlide>): HeroSlide { // 把 Mongo 文件轉成前端可用的型別
+  return {
+    _id: doc._id.toString(),
+    title: doc.title ?? doc.titleLines?.join("") ?? "",
+    image: doc.image,
+    href: doc.href ?? doc.ctaHref ?? "",
+    visible: doc.visible ?? true,
+    order: doc.order,
+  };
 }
 
-export async function listHeroSlides(): Promise<HeroSlide[]> { // 依排序取得所有首頁焦點
+export async function listHeroSlides(): Promise<HeroSlide[]> { // 依順序取得所有首頁輪播圖(後台用，含隱藏的)
   const db = await getDb();
-  const docs = await db.collection<HeroSlideInput>("heroSlides").find().sort({ order: 1 }).toArray();
+  const docs = await db.collection<StoredHeroSlide>("heroSlides").find().sort({ order: 1 }).toArray();
   return docs.map(toHeroSlide);
+}
+
+export async function listVisibleHeroSlides(): Promise<HeroSlide[]> { // 只取狀態為顯示的輪播圖(前台首頁用)
+  return (await listHeroSlides()).filter((slide) => slide.visible);
 }
 
 export async function nextHeroSlideOrder(): Promise<number> { // 取得新增時該用的排序值（接在最後）
@@ -44,7 +52,10 @@ export async function createHeroSlide(data: HeroSlideInput): Promise<void> { // 
 
 export async function updateHeroSlide(id: string, data: HeroSlideInput): Promise<void> { // 修改一則首頁焦點
   const db = await getDb();
-  await db.collection<HeroSlideInput>("heroSlides").updateOne({ _id: new ObjectId(id) }, { $set: data });
+  await db.collection("heroSlides").updateOne(
+    { _id: new ObjectId(id) },
+    { $set: data, $unset: { titleLines: "", description: "", author: "", date: "", readTime: "", ctaLabel: "", ctaHref: "", tag: "" } }, // 順便清掉舊版欄位
+  );
 }
 
 export async function deleteHeroSlide(id: string): Promise<void> { // 刪除一則首頁焦點
@@ -61,7 +72,7 @@ export interface NewsItem { // 新聞文章，序列化給前端使用的型別
   tag: string;
   title: string;
   excerpt: string;
-  content: string; // 文章全文(內文)，段落之間用空行分隔；文章詳情頁會顯示這欄
+  content: string; // 文章全文(內文)，文字編輯器存的 HTML；舊文章可能是純文字(段落之間用空行分隔)
   meta: string;
   tone: { a: string; b: string; icon: IconId };
   image: { src: string; alt: string } | null; // 上傳的實際照片；沒有照片時前台會改用 tone 色塊+圖示呈現
@@ -104,6 +115,13 @@ export async function getPublishedNewsById(id: string): Promise<NewsItem | null>
   const doc = await db
     .collection<Omit<NewsItem, "_id">>("news")
     .findOne({ _id: new ObjectId(id), status: "published" });
+  return doc ? toNewsItem(doc) : null;
+}
+
+export async function getNewsById(id: string): Promise<NewsItem | null> { // 取得單篇新聞(後台編輯頁用，含草稿)；id 格式不對或找不到就回傳 null
+  if (!ObjectId.isValid(id)) return null;
+  const db = await getDb();
+  const doc = await db.collection<Omit<NewsItem, "_id">>("news").findOne({ _id: new ObjectId(id) });
   return doc ? toNewsItem(doc) : null;
 }
 

@@ -44,7 +44,7 @@ export default function AdminSidebar({
   portfolioCount: number;
 }) {
   const contentNav: NavItem[] = [ // 「內容管理」分組的選單項目，數量來自父層傳入的真實資料
-    { id: "hero", label: "首頁焦點", icon: IconLayers, count: heroCount },
+    { id: "hero", label: "首頁輪播圖", icon: IconLayers, count: heroCount },
     { id: "news", label: "最新消息", icon: IconDoc, count: newsCount },
     { id: "portfolio", label: "作品集", icon: IconImage, count: portfolioCount },
     { id: "schedule", label: "賽事行事曆", icon: IconCalendar, count: scheduleCount },

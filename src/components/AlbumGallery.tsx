@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react"; // 匯入狀態、副作用、記憶化回呼 hook
 import Image from "next/image"; // 匯入 Next.js 最佳化圖片元件
-import PhotoTile from "./PhotoTile"; // 匯入圖片方塊元件
 import type { PortfolioPhoto } from "@/lib/db"; // 匯入相簿照片的型別
+
+const DEFAULT_RATIO = 1.5; // 照片還沒載入時預設當作橫式 3:2
 
 export default function AlbumGallery({ photos }: { photos: PortfolioPhoto[] }) { // 相簿照片牆，點照片會開全螢幕檢視器
   const [activeIndex, setActiveIndex] = useState<number | null>(null); // 目前在全螢幕檢視器裡顯示的照片索引；null 代表檢視器關閉
+  const [ratios, setRatios] = useState<Record<string, number>>({}); // 每張照片載入後量到的寬高比，用來排版；還沒載入前先用預設值
 
   const showPrev = useCallback(() => { // 切換到上一張(循環到最後一張)
     setActiveIndex((i) => (i === null ? null : (i - 1 + photos.length) % photos.length));
@@ -34,17 +36,36 @@ export default function AlbumGallery({ photos }: { photos: PortfolioPhoto[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"> {/* 照片牆格線容器；照片張數不是欄數倍數時，最後一列會留白而不是黑底 */}
-        {photos.map((photo, index) => (
-          <button
-            key={photo.src}
-            type="button"
-            onClick={() => setActiveIndex(index)} // 點擊縮圖開啟全螢幕檢視器，並定位到這張照片
-            className="relative aspect-[4/5] overflow-hidden rounded-sm bg-paper-3"
-          >
-            <PhotoTile src={photo.src} alt={photo.alt || `照片 ${index + 1}`} />
-          </button>
-        ))}
+      {/* 等高列排版：每張照片依實際寬高比決定寬度，同一列高度一致並左右填滿，照片不裁切、順序不變；
+          最後的 after 撐開空間，避免最後一列照片被拉得太寬 */}
+      <div className="flex flex-wrap gap-2 [--row-h:140px] after:grow-[999] after:content-[''] sm:gap-3 sm:[--row-h:190px] lg:[--row-h:230px]">
+        {photos.map((photo, index) => {
+          const ratio = ratios[photo.src] ?? DEFAULT_RATIO;
+          return (
+            <button
+              key={photo.src}
+              type="button"
+              onClick={() => setActiveIndex(index)} // 點擊縮圖開啟全螢幕檢視器，並定位到這張照片
+              className="relative overflow-hidden rounded-sm bg-paper-3"
+              style={{ flexGrow: ratio, flexBasis: `calc(var(--row-h) * ${ratio})` }} // 越寬的照片分到越多寬度
+            >
+              <span className="block" style={{ paddingBottom: `${100 / ratio}%` }} /> {/* 依寬高比撐出高度 */}
+              <Image
+                src={photo.src}
+                alt={photo.alt || `照片 ${index + 1}`}
+                fill
+                sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
+                className="object-cover transition-transform duration-300 hover:scale-[1.03]"
+                onLoad={(e) => { // 載入後量出真實寬高比，重新排版
+                  const img = e.currentTarget;
+                  if (!img.naturalWidth || !img.naturalHeight) return;
+                  const measured = img.naturalWidth / img.naturalHeight;
+                  setRatios((prev) => (prev[photo.src] === measured ? prev : { ...prev, [photo.src]: measured }));
+                }}
+              />
+            </button>
+          );
+        })}
       </div>
 
       {active && ( // 檢視器開啟時才渲染全螢幕覆蓋層

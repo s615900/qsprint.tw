@@ -2,13 +2,11 @@
 
 import { useState } from "react"; // 匯入狀態 hook
 import PhotoTile from "./PhotoTile"; // 匯入圖片顯示元件
-import Eyebrow from "./Eyebrow"; // 匯入小標籤元件
 import AdminModal from "./AdminModal"; // 匯入共用的彈出視窗外框
 import AdminImageField from "./AdminImageField"; // 匯入圖片上傳欄位元件
 import { IconPencil, IconTrash } from "./AdminIcons"; // 匯入編輯、刪除圖示
 import type { HeroSlide } from "@/lib/db"; // 匯入首頁焦點的型別
 import { createHeroSlideAction, deleteHeroSlideAction, updateHeroSlideAction } from "@/app/admin/actions"; // 匯入首頁焦點的 Server Actions
-import { pageLinkOptions } from "@/lib/page-links"; // 匯入「按鈕連結」下拉選單的頁面清單
 
 const inputClass = // 表單輸入框共用樣式
   "w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-gold/40";
@@ -23,9 +21,9 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
     <div className="flex flex-col gap-5"> {/* 整頁垂直排列容器 */}
       <div className="flex flex-wrap items-end justify-between gap-3"> {/* 標題與新增按鈕的橫向排列列 */}
         <div> {/* 標題與說明文字容器 */}
-          <h2 className="font-display text-lg font-bold">首頁焦點</h2> {/* 區塊標題 */}
+          <h2 className="font-display text-lg font-bold">首頁輪播圖</h2> {/* 區塊標題 */}
           <p className="mt-1 text-[12.5px] text-ink-soft">
-            首張投影片會顯示在首頁最上方,新增的項目會排在最後面。 {/* 說明文字 */}
+            狀態為「顯示」的圖片會依順序在首頁滿版輪播,順序數字小的排前面。 {/* 說明文字 */}
           </p>
         </div>
         <button
@@ -33,13 +31,13 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
           onClick={() => setModal({ mode: "add" })} // 點擊開啟新增視窗
           className="rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90"
         >
-          + 新增焦點
+          + 新增輪播圖
         </button>
       </div>
 
       {slides.length === 0 ? ( // 沒有任何資料時顯示提示文字
         <p className="rounded-xl border border-dashed border-line bg-paper-2 p-6 text-center text-[13px] text-ink-soft">
-          尚未新增任何首頁焦點。
+          尚未新增任何首頁輪播圖。
         </p>
       ) : (
         <div className="flex flex-col gap-3"> {/* 卡片清單垂直排列容器 */}
@@ -56,20 +54,18 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
               </div>
 
               <div className="min-w-0"> {/* 文字資訊容器 */}
-                <Eyebrow tone="gold" className="mb-1">
-                  {slide.tag}
-                </Eyebrow>
-                <h4 className="truncate text-[13.5px] font-bold">{slide.titleLines.join("")}</h4>
-                <p className="truncate text-[12px] text-ink-soft">{slide.description}</p>
+                <h4 className="truncate text-[13.5px] font-bold">{slide.title || "(未填標題)"}</h4>
+                <p className="truncate text-[12px] text-ink-soft">{slide.href || "不連結"}</p>
               </div>
 
               <div className="flex items-center gap-2.5"> {/* 狀態標籤與操作按鈕 */}
+                <span className="flex-none text-[11px] text-ink-soft">順序 {slide.order}</span>
                 <span
                   className={`flex-none rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${
-                    index === 0 ? "bg-[#e3efe1] text-[#4c8c5a]" : "bg-paper-3 text-ink-soft"
+                    slide.visible ? "bg-[#e3efe1] text-[#4c8c5a]" : "bg-paper-3 text-ink-soft"
                   }`}
                 >
-                  {index === 0 ? "顯示中" : `排序 ${index + 1}`}
+                  {slide.visible ? "顯示" : "隱藏"}
                 </span>
                 <button
                   type="button"
@@ -81,7 +77,7 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
                 <form
                   action={deleteHeroSlideAction.bind(null, slide._id)} // 綁定要刪除的 id
                   onSubmit={(e) => { // 送出前先跳出確認視窗
-                    if (!confirm(`確定要刪除「${slide.titleLines.join("")}」嗎?`)) e.preventDefault();
+                    if (!confirm(`確定要刪除「${slide.title || "這張輪播圖"}」嗎?`)) e.preventDefault();
                   }}
                 >
                   <button type="submit" className="rounded-md p-1.5 text-ink-soft hover:bg-paper-3 hover:text-ink">
@@ -95,84 +91,57 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
       )}
 
       {modal && ( // 有開啟視窗時才渲染
-        <AdminModal title={modal.mode === "add" ? "新增首頁焦點" : "編輯首頁焦點"} onClose={() => setModal(null)}>
+        <AdminModal title={modal.mode === "add" ? "新增輪播圖" : "編輯輪播圖"} onClose={() => setModal(null)}>
           <form
             action={modal.mode === "add" ? createHeroSlideAction : updateHeroSlideAction.bind(null, modal.slide._id)}
             onSubmit={() => setModal(null)} // 送出後立即關閉視窗，新資料會在儲存完成後自動刷新列表
             className="flex flex-col gap-3"
           >
-            {modal.mode === "edit" && <input type="hidden" name="order" defaultValue={modal.slide.order} />}
             <label className={labelClass}>
-              分類標籤
-              <input name="tag" defaultValue={modal.mode === "edit" ? modal.slide.tag : ""} required className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              標題(每行一句,會依序換行顯示)
-              <textarea
-                name="titleLines"
-                defaultValue={modal.mode === "edit" ? modal.slide.titleLines.join("\n") : ""}
-                required
-                rows={3}
-                className={inputClass}
-              />
-            </label>
-            <label className={labelClass}>
-              說明文字
-              <textarea
-                name="description"
-                defaultValue={modal.mode === "edit" ? modal.slide.description : ""}
-                required
-                rows={2}
-                className={inputClass}
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className={labelClass}>
-                作者
-                <input name="author" defaultValue={modal.mode === "edit" ? modal.slide.author : "青春止秒編輯部"} required className={inputClass} />
-              </label>
-              <label className={labelClass}>
-                日期
-                <input
-                  name="date"
-                  placeholder="2026.09.22"
-                  defaultValue={modal.mode === "edit" ? modal.slide.date : ""}
-                  required
-                  className={inputClass}
-                />
-              </label>
-            </div>
-            {/* 閱讀提示文字、按鈕文字不開放後台編輯，改用固定預設值(編輯既有焦點時沿用原本的值) */}
-            <input type="hidden" name="readTime" defaultValue={modal.mode === "edit" ? modal.slide.readTime : "閱讀更多"} />
-            <input type="hidden" name="ctaLabel" defaultValue={modal.mode === "edit" ? modal.slide.ctaLabel : "閱讀全文 →"} />
-            <label className={labelClass}>
-              按鈕連結(點擊這則焦點會前往的頁面)
-              <select
-                name="ctaHref"
-                defaultValue={modal.mode === "edit" ? modal.slide.ctaHref : "/news"}
-                required
-                className={inputClass}
-              >
-                {pageLinkOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-                {/* 既有資料若連到清單以外的頁面，額外補一個選項避免存檔時被改掉 */}
-                {modal.mode === "edit" &&
-                  !pageLinkOptions.some((option) => option.value === modal.slide.ctaHref) && (
-                    <option value={modal.slide.ctaHref}>{modal.slide.ctaHref}</option>
-                  )}
-              </select>
+              標題(後台辨識用,不會顯示在首頁)
+              <input name="title" defaultValue={modal.mode === "edit" ? modal.slide.title : ""} required className={inputClass} />
             </label>
             <AdminImageField
               srcName="imageSrc"
               altName="imageAlt"
-              label="圖片"
+              label="圖片(建議橫式、寬度 1920px 以上)"
               defaultSrc={modal.mode === "edit" ? modal.slide.image.src : ""}
               defaultAlt={modal.mode === "edit" ? modal.slide.image.alt : ""}
               required
             />
+            <label className={labelClass}>
+              網址(點擊圖片前往的頁面,可填站內路徑如 /news 或外部網址,留空則不連結)
+              <input
+                name="href"
+                defaultValue={modal.mode === "edit" ? modal.slide.href : ""}
+                placeholder="https://"
+                className={inputClass}
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <fieldset className={labelClass}>
+                狀態
+                <div className="flex items-center gap-4 py-2 font-normal text-ink">
+                  <label className="flex items-center gap-1.5">
+                    <input type="radio" name="visible" value="visible" defaultChecked={modal.mode === "add" || modal.slide.visible} />
+                    顯示
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    <input type="radio" name="visible" value="hidden" defaultChecked={modal.mode === "edit" && !modal.slide.visible} />
+                    隱藏
+                  </label>
+                </div>
+              </fieldset>
+              <label className={labelClass}>
+                順序(數字小的排前面,留空排最後)
+                <input
+                  name="order"
+                  type="number"
+                  defaultValue={modal.mode === "edit" ? modal.slide.order : ""}
+                  className={inputClass}
+                />
+              </label>
+            </div>
             <button type="submit" className="mt-1.5 rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90">
               儲存
             </button>
