@@ -9,13 +9,14 @@ import {
   IconGear, // 網站設定圖示
 } from "./AdminIcons";
 
-export const adminSections = ["hero", "news", "portfolio", "schedule", "settings"] as const; // 所有後台分頁識別碼
+export const adminSections = ["hero", "news", "portfolio", "schedule", "about", "settings"] as const; // 所有後台分頁識別碼
 
 export type AdminSection = // 後台可切換的分頁區段型別
   | "hero" // 首頁焦點
   | "news" // 最新消息
   | "portfolio" // 作品集
   | "schedule" // 賽事行事曆
+  | "about" // 關於我們
   | "settings"; // 網站設定
 
 interface NavItem {
@@ -25,7 +26,10 @@ interface NavItem {
   count?: number; // 選單旁顯示的數量徽章（選填）
 }
 
-const siteNav: NavItem[] = [{ id: "settings", label: "網站設定", icon: IconGear }];
+const siteNav: NavItem[] = [
+  { id: "about", label: "關於我們", icon: IconDoc },
+  { id: "settings", label: "網站設定", icon: IconGear },
+];
 // 「網站」分組的選單項目
 
 export default function AdminSidebar({

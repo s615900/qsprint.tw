@@ -1,13 +1,6 @@
 // 首頁焦點(HeroSlide)、最新消息(NewsItem)、賽事行事曆(ScheduleItem)、作品集(PortfolioAlbum)已改由 MongoDB 提供資料，
 // 對應型別與 CRUD 函式請見 src/lib/db.ts；這裡只保留仍為靜態資料的內容。
 
-export const stats = [ // 匯出首頁/關於頁使用的統計數字資料
-  { value: "2019", label: "成立年份" }, // 統計項目：成立年份
-  { value: "87+", label: "已記錄賽事場次" }, // 統計項目：已記錄賽事場次
-  { value: "42", label: "合作學校 / 社團" }, // 統計項目：合作學校/社團數
-  { value: "12萬+", label: "交付選手照片張數" }, // 統計項目：交付照片張數
-]; // stats 陣列結束
-
 export const navLinks = [ // 匯出導覽列連結資料
   { href: "/news", label: "最新消息" }, // 導覽項目：連到新聞頁
   { href: "/portfolio", label: "作品集" }, // 導覽項目：連到作品集頁

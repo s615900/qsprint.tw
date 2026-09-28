@@ -85,6 +85,9 @@ h3 {
 .rich-content > * + * {
   margin-top: 1.1em;
 }
+.rich-content > :first-child {
+  margin-top: 0; /* 內文開頭若是標題，不要多出上方空白 */
+}
 .rich-content h2 {
   margin-top: 1.8em;
   font-family: var(--font-display);

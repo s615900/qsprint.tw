@@ -17,6 +17,7 @@ import {
   createSchedule, updateSchedule, deleteSchedule, type ScheduleInput,
   createPortfolioAlbum, updatePortfolioAlbum, deletePortfolioAlbum,
   type PortfolioAlbumInput, type PortfolioPhoto,
+  saveAboutPage, type AboutStat,
 } from "@/lib/db"; // 匯入資料存取層的 CRUD 函式與輸入型別
 import { tonePresets } from "@/lib/tone-presets"; // 匯入配色預設清單
 
@@ -305,4 +306,26 @@ export async function deletePortfolioAlbumAction(id: string): Promise<void> { //
   await requireAdmin();
   await deletePortfolioAlbum(id);
   revalidateAfterPortfolioChange();
+}
+
+// ---------- 關於我們 ----------
+
+export type SaveAboutState = { savedAt: number | null }; // 儲存結果，用來在後台顯示「已儲存」
+
+export async function saveAboutPageAction(_prev: SaveAboutState, formData: FormData): Promise<SaveAboutState> { // 儲存關於我們內容
+  await requireAdmin();
+  const imageSrc = String(formData.get("imageSrc") ?? "").trim();
+  const values = formData.getAll("statValue").map((v) => String(v).trim());
+  const labels = formData.getAll("statLabel").map((v) => String(v).trim());
+  const stats: AboutStat[] = values
+    .map((value, i) => ({ value, label: labels[i] ?? "" }))
+    .filter((stat) => stat.value || stat.label); // 數值和說明都空白的列視為刪除
+  await saveAboutPage({
+    content: sanitizeRichText(String(formData.get("content") ?? "").trim()), // 存檔前先過濾不安全的標籤
+    image: imageSrc ? { src: imageSrc, alt: String(formData.get("imageAlt") ?? "").trim() } : null,
+    stats,
+  });
+  revalidatePath("/admin");
+  revalidatePath("/about");
+  return { savedAt: Date.now() };
 }

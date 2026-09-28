@@ -1,54 +1,41 @@
 import PhotoTile from "./PhotoTile"; // 匯入照片卡片元件
 import ParallaxImage from "./ParallaxImage"; // 匯入具視差效果的圖片元件
-import { stats } from "@/lib/content"; // 匯入統計數據的靜態資料
+import type { AboutPage } from "@/lib/db"; // 匯入關於我們的型別(內容由後台編輯)
+import { sanitizeRichText, toRichTextHtml } from "@/lib/rich-text"; // 匯入內文 HTML 轉換與過濾工具
 
-export default function AboutSection() { // 匯出「關於我們」區塊元件
+export default function AboutSection({ about }: { about: AboutPage }) { // 匯出「關於我們」區塊元件，內容來自後台
+  const contentHtml = sanitizeRichText(toRichTextHtml(about.content)); // 顯示前再過濾一次 HTML
+
   return ( // 回傳畫面結構
     <section> {/* 區塊最外層容器 */}
       <div
         id="about" // 提供錨點連結使用的 id
-        className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14" // 兩欄格線排版容器(圖片＋文字)
+        className={`mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16 ${
+          about.image ? "grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14" : "max-w-3xl" // 有照片用兩欄，沒照片內文單欄置中
+        }`}
       >
-        <div className="aspect-[4/5]"> {/* 固定長寬比的圖片容器 */}
-          <ParallaxImage speed={0.5}> {/* 以 0.5 倍速度做視差效果 */}
-            <PhotoTile
-              src="/images/track-04-stadium.jpg" // 圖片來源路徑
-              alt="田徑場跑道上的 4x100 與 4x400 接力交接區標線" // 圖片替代文字
-            />
-          </ParallaxImage>
-        </div>
-        <div> {/* 文字內容容器 */}
-          <h2 className="font-display text-[1.8rem] font-bold sm:text-[2.1rem] lg:text-[2.4rem]"> {/* 區塊主標題樣式 */}
-            關於青春止秒 {/* 主標題文字 */}
-          </h2>
-          <p className="my-4 max-w-[30ch] font-display text-[1.15rem] font-semibold italic text-gold"> {/* 標語樣式，斜體強調 */}
-            如果青春會老,那就讓它在跑道上「止秒」。 {/* 品牌標語文字 */}
-          </p>
-          <p className="mb-3.5 max-w-[58ch] text-ink-soft"> {/* 第一段介紹文字樣式 */}
-            青春止秒成立於 2019
-            年,是一支專注在校園與業餘田徑賽事的紀錄團隊。我們相信,比賽場上的青春只有一次,但影像可以讓那一秒鐘停下來——不管是起跑、交棒、跨欄,還是終點線前用盡全力的表情。 {/* 第一段介紹文字內容 */}
-          </p>
-          <p className="max-w-[58ch] text-ink-soft"> {/* 第二段介紹文字樣式 */}
-            我們的鏡頭跟著選手跑遍全台的田徑場,從縣市運動會到全國賽,從清晨的暖身到深夜的成績公告,我們在場邊蹲點,只為了不錯過那決定性的
-            0.01 秒。 {/* 第二段介紹文字內容 */}
-          </p>
-        </div>
+        {about.image && (
+          <div className="aspect-[4/5] lg:sticky lg:top-28"> {/* 固定長寬比的圖片容器，捲動時停在畫面上 */}
+            <ParallaxImage speed={0.5}> {/* 以 0.5 倍速度做視差效果 */}
+              <PhotoTile src={about.image.src} alt={about.image.alt} />
+            </ParallaxImage>
+          </div>
+        )}
+        <div className="rich-content" dangerouslySetInnerHTML={{ __html: contentHtml }} /> {/* 後台文字編輯器排好的內文 */}
       </div>
 
-      <div className="border-y-2 border-ink bg-ink text-paper"> {/* 統計數據區塊背景容器，上下有邊線 */}
-        <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-paper/15 px-5 sm:px-8 md:grid-cols-4"> {/* 統計數據格線容器，手機兩欄、桌機四欄，項目間有直線分隔 */}
-          {stats.map((stat) => ( // 走訪統計資料陣列，為每一筆資料渲染一個項目
-            <div key={stat.label} className="px-4 py-8 text-center first:pl-0 sm:text-left"> {/* 以標籤文字作為 key 的單一統計項目容器 */}
-              <b className="block font-clock text-[2.4rem] leading-none tracking-wide sm:text-[3rem]"> {/* 大字數值樣式 */}
-                {stat.value} {/* 統計數值 */}
-              </b>
-              <span className="mt-2 block text-[0.72rem] tracking-[0.15em] text-paper/60"> {/* 小字標籤樣式 */}
-                {stat.label} {/* 統計項目的說明標籤 */}
-              </span>
-            </div>
-          ))}
+      {about.stats.length > 0 && (
+        <div className="border-y-2 border-ink bg-ink text-paper"> {/* 統計數據區塊背景容器，上下有邊線 */}
+          <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-paper/15 px-5 sm:px-8 md:grid-cols-4"> {/* 手機兩欄、桌機四欄 */}
+            {about.stats.map((stat, i) => ( // 走訪統計資料，為每一筆渲染一個項目
+              <div key={i} className="px-4 py-8 text-center first:pl-0 sm:text-left">
+                <b className="block font-clock text-[2.4rem] leading-none tracking-wide sm:text-[3rem]">{stat.value}</b>
+                <span className="mt-2 block text-[0.72rem] tracking-[0.15em] text-paper/60">{stat.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

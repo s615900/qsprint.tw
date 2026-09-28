@@ -251,3 +251,44 @@ export async function deletePortfolioAlbum(id: string): Promise<void> { // 刪�
   const db = await getDb();
   await db.collection("portfolio").deleteOne({ _id: new ObjectId(id) });
 }
+
+// ---------- 關於我們 (About) ----------
+
+export interface AboutStat { // 關於我們頁底部的統計數字
+  value: string; // 數值，如「2019」「87+」
+  label: string; // 說明，如「成立年份」
+}
+
+export interface AboutPage { // 關於我們頁內容，整站只有一份
+  content: string; // 內文，文字編輯器存的 HTML
+  image: { src: string; alt: string } | null; // 內文旁的照片；沒有就不顯示照片、內文改為置中單欄
+  stats: AboutStat[]; // 底部統計數字；空陣列代表不顯示統計區塊
+}
+
+// 後台還沒存過時使用的預設內容(與原本寫死在頁面上的文字相同)
+const defaultAboutPage: AboutPage = {
+  content:
+    "<h2>關於青春止秒</h2>" +
+    "<blockquote><p>如果青春會老,那就讓它在跑道上「止秒」。</p></blockquote>" +
+    "<p>青春止秒成立於 2019 年,是一支專注在校園與業餘田徑賽事的紀錄團隊。我們相信,比賽場上的青春只有一次,但影像可以讓那一秒鐘停下來——不管是起跑、交棒、跨欄,還是終點線前用盡全力的表情。</p>" +
+    "<p>我們的鏡頭跟著選手跑遍全台的田徑場,從縣市運動會到全國賽,從清晨的暖身到深夜的成績公告,我們在場邊蹲點,只為了不錯過那決定性的 0.01 秒。</p>",
+  image: { src: "/images/track-04-stadium.jpg", alt: "田徑場跑道上的 4x100 與 4x400 接力交接區標線" },
+  stats: [
+    { value: "2019", label: "成立年份" },
+    { value: "87+", label: "已記錄賽事場次" },
+    { value: "42", label: "合作學校 / 社團" },
+    { value: "12萬+", label: "交付選手照片張數" },
+  ],
+};
+
+export async function getAboutPage(): Promise<AboutPage> { // 取得關於我們內容，沒存過就回傳預設內容
+  const db = await getDb();
+  const doc = await db.collection<AboutPage & { _id: string }>("pages").findOne({ _id: "about" });
+  if (!doc) return defaultAboutPage;
+  return { content: doc.content, image: doc.image, stats: doc.stats };
+}
+
+export async function saveAboutPage(data: AboutPage): Promise<void> { // 儲存關於我們內容(沒有就新增)
+  const db = await getDb();
+  await db.collection<AboutPage & { _id: string }>("pages").updateOne({ _id: "about" }, { $set: data }, { upsert: true });
+}
