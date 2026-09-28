@@ -1,7 +1,7 @@
+import Image from "next/image"; // 匯入 Next.js 優化過的圖片元件
 import type { ComponentType } from "react"; // 匯入 React 元件型別，用來標註圖示元件的型別
 import { logout } from "@/app/admin/login/actions"; // 匯入登出 Server Action
 import {
-  IconGrid, // 總覽圖示
   IconLayers, // 首頁焦點圖示
   IconDoc, // 最新消息圖示
   IconImage, // 作品集圖示
@@ -9,8 +9,9 @@ import {
   IconGear, // 網站設定圖示
 } from "./AdminIcons";
 
+export const adminSections = ["hero", "news", "portfolio", "schedule", "settings"] as const; // 所有後台分頁識別碼
+
 export type AdminSection = // 後台可切換的分頁區段型別
-  | "dashboard" // 總覽
   | "hero" // 首頁焦點
   | "news" // 最新消息
   | "portfolio" // 作品集
@@ -23,9 +24,6 @@ interface NavItem {
   icon: ComponentType<{ className?: string }>; // 選單圖示元件
   count?: number; // 選單旁顯示的數量徽章（選填）
 }
-
-const overviewNav: NavItem[] = [{ id: "dashboard", label: "總覽", icon: IconGrid }];
-// 「總覽」分組的選單項目
 
 const siteNav: NavItem[] = [{ id: "settings", label: "網站設定", icon: IconGear }];
 // 「網站」分組的選單項目
@@ -58,12 +56,10 @@ export default function AdminSidebar({
         {/* 品牌 logo 與標語區塊 */}
         <div className="flex items-center gap-2.5">
           {/* logo 圖示與文字橫向排列 */}
-          <div className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-gradient-to-br from-peach to-coral text-ink">
-            {/* 漸層底色的圖示外框 */}
-            <svg viewBox="0 0 400 300" className="h-5 w-5">
-              {/* 碼表 svg 圖示 */}
-              <use href="#s-stopwatch" /> {/* 引用共用 svg symbol */}
-            </svg>
+          <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-paper p-1.5">
+            {/* 淺色底框，讓黑色 logo 在深色側邊欄上看得清楚 */}
+            <Image src="/images/qsprint-icon-v2.png" alt="" width={468} height={341} className="h-auto w-full" priority />
+            {/* 與前台頁首相同的 logo */}
           </div>
           <div className="leading-tight">
             {/* 品牌文字區塊 */}
@@ -72,15 +68,10 @@ export default function AdminSidebar({
             {/* 英文後台標語 */}
           </div>
         </div>
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-gold/40 bg-gold/15 px-2.5 py-1 text-[10px] tracking-wide text-peach">
-          網站設定 尚未串接資料庫 {/* 提示這個分頁目前仍是介面預覽 */}
-        </span>
       </div>
 
       <nav className="flex flex-col gap-4">
-        {/* 三個分組的導覽選單 */}
-        <NavGroup label="總覽" items={overviewNav} active={active} onSelect={onSelect} />
-        {/* 總覽分組 */}
+        {/* 兩個分組的導覽選單 */}
         <NavGroup label="內容管理" items={contentNav} active={active} onSelect={onSelect} />
         {/* 內容管理分組 */}
         <NavGroup label="網站" items={siteNav} active={active} onSelect={onSelect} />
