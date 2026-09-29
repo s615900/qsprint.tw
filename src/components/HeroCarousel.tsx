@@ -30,15 +30,28 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) { // �
     >
       {slides.map((slide, i) => {
         const external = /^https?:\/\//.test(slide.href); // 外部網址另開新分頁
-        const content = ( // 只顯示照片，標題僅供後台辨識與圖片替代文字使用，不疊在前台畫面上
-          <Image
-            src={slide.image.src}
-            alt={slide.image.alt}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            priority={i === 0} // 第一張優先載入
-          />
+        const content = ( // 照片加上左下角標題，底部疊深色漸層讓白字在任何照片上都清楚
+          <>
+            <Image
+              src={slide.image.src}
+              alt={slide.image.alt}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority={i === 0} // 第一張優先載入
+            />
+            {slide.title && (
+              <>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/40 via-ink/10 to-transparent" aria-hidden /> {/* 底部漸層遮罩，提高文字對比 */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-3 px-3 sm:bottom-4 sm:px-6 lg:px-8">
+                  <span className="mb-4 block h-1.5 w-16 bg-gold/75" aria-hidden /> {/* 標題上方的金色短線 */}
+                  <h2 className="max-w-[92%] font-display font-bold leading-tight tracking-wide text-paper/75 [text-shadow:0_2px_16px_rgba(0,0,0,0.35)] text-3xl sm:text-5xl lg:text-7xl">
+                    {slide.title}
+                  </h2>
+                </div>
+              </>
+            )}
+          </>
         );
         const layerClass = `absolute inset-0 transition-opacity duration-700 ${i === index ? "opacity-100" : "pointer-events-none opacity-0"}`; // 目前這張淡入，其餘淡出且不可點
         if (!slide.href) return <div key={slide._id} className={layerClass} aria-hidden={i !== index}>{content}</div>;

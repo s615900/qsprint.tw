@@ -6,7 +6,7 @@ import type { IconId } from "@/components/ArtTile"; // 匯入圖示 ID 型別，
 
 export interface HeroSlide { // 首頁輪播圖，序列化給前端使用的型別（_id 為字串）
   _id: string;
-  title: string; // 標題，後台辨識用，前台不顯示
+  title: string; // 標題，顯示在前台輪播照片左下角
   image: { src: string; alt: string };
   href: string; // 點擊照片前往的網址，可填站內路徑(/news)或外部網址(https://...)，空字串代表不連結
   visible: boolean; // 狀態：顯示或隱藏

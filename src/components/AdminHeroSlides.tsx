@@ -98,7 +98,7 @@ export default function AdminHeroSlides({ slides }: { slides: HeroSlide[] }) { /
             className="flex flex-col gap-3"
           >
             <label className={labelClass}>
-              標題(後台辨識用,不會顯示在首頁)
+              標題(會顯示在首頁照片左下角)
               <input name="title" defaultValue={modal.mode === "edit" ? modal.slide.title : ""} required className={inputClass} />
             </label>
             <AdminImageField
