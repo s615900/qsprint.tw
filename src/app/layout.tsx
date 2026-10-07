@@ -1,6 +1,7 @@
 import type { Metadata } from "next"; // 從 next 匯入 Metadata 型別，用來定義網頁的中繼資料
 import IconSprite from "@/components/Icons"; // 匯入 IconSprite 元件，會在 body 內插入共用的 SVG 圖示集
 import SiteChrome from "@/components/SiteChrome"; // 匯入 SiteChrome 元件，用來包裹頁面內容並提供共用外框(如 header/footer)
+import { Analytics } from "@vercel/analytics/next"; // 匯入 Vercel 網站流量分析元件
 import "./globals.css"; // 匯入全域 CSS 樣式表
 
 export const metadata: Metadata = { // 匯出符合 Next.js 規範的 metadata 物件，供框架自動產生 <head> 內容
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) { // 匯出�
       <body className="bg-paper font-body text-ink antialiased"> {/* body 標籤，套用背景色、內文字型、文字顏色與反鋸齒樣式 */}
         <IconSprite /> {/* 插入共用的 SVG 圖示集，供全站元件透過 <use> 引用 */}
         <SiteChrome>{children}</SiteChrome> {/* 用共用外框包住當前頁面內容並渲染 */}
+        <Analytics /> {/* Vercel Web Analytics：統計訪客與頁面瀏覽 */}
       </body>
     </html>
   );
