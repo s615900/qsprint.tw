@@ -2,6 +2,7 @@ import type { Metadata } from "next"; // 從 next 匯入 Metadata 型別，用�
 import IconSprite from "@/components/Icons"; // 匯入 IconSprite 元件，會在 body 內插入共用的 SVG 圖示集
 import SiteChrome from "@/components/SiteChrome"; // 匯入 SiteChrome 元件，用來包裹頁面內容並提供共用外框(如 header/footer)
 import { Analytics } from "@vercel/analytics/next"; // 匯入 Vercel 網站流量分析元件
+import { SpeedInsights } from "@vercel/speed-insights/next"; // 匯入 Vercel 速度洞察元件
 import "./globals.css"; // 匯入全域 CSS 樣式表
 
 export const metadata: Metadata = { // 匯出符合 Next.js 規範的 metadata 物件，供框架自動產生 <head> 內容
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) { // 匯出�
         <IconSprite /> {/* 插入共用的 SVG 圖示集，供全站元件透過 <use> 引用 */}
         <SiteChrome>{children}</SiteChrome> {/* 用共用外框包住當前頁面內容並渲染 */}
         <Analytics /> {/* Vercel Web Analytics：統計訪客與頁面瀏覽 */}
+        <SpeedInsights /> {/* Vercel Speed Insights：收集網站載入速度數據 */}
       </body>
     </html>
   );
