@@ -47,3 +47,10 @@ export function sanitizeRichText(html: string): string { // 只保留文字編�
     },
   });
 }
+
+export function firstParagraphText(content: string): string { // 取內文第一段的純文字(去掉所有標籤)，用在只能放純文字的摘要處
+  const firstP = toRichTextHtml(content).match(/<(p|h2|h3|li|blockquote)[^>]*>[\s\S]*?<\/\1>/i)?.[0] ?? "";
+  return sanitizeHtml(firstP, { allowedTags: [], allowedAttributes: {} }) // 去掉標籤，並把 &amp; 等實體還原
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ").trim();
+}

@@ -3,11 +3,12 @@ import ArtTile from "./ArtTile"; // 匯入以色塊＋圖示呈現的替代插�
 import ParallaxImage from "./ParallaxImage"; // 匯入視差捲動圖片元件
 import Eyebrow from "./Eyebrow"; // 匯入小標籤元件
 import type { NewsItem } from "@/lib/db"; // 匯入新聞的型別(資料來自 MongoDB)
+import { firstParagraphText } from "@/lib/rich-text"; // 匯入「取第一段純文字」工具(內文是 HTML，不能直接印出)
 
 export default function FeaturedSpread({ article }: { article: NewsItem | null }) { // 定義「精選報導」跨欄元件並預設匯出，內容來自被標記為精選的新聞文章
   if (!article) return null; // 後台還沒指定精選文章時，這個區塊就不顯示
 
-  const paragraph = (article.content || article.excerpt).split(/\n\s*\n/)[0]?.trim() ?? ""; // 只取內文第一段當作跨欄摘要
+  const paragraph = firstParagraphText(article.content || article.excerpt); // 只取內文第一段(去掉 HTML 標籤)當作跨欄摘要
 
   return ( // 回傳這個元件要渲染的畫面
     <section className="border-y-2 border-ink bg-paper-3"> {/* 區塊外框：上下有邊框、底色為 paper-3 */}
