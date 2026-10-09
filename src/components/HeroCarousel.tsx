@@ -24,7 +24,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) { // �
 
   return (
     <div
-      className="relative aspect-[4/3] w-full overflow-hidden bg-ink sm:aspect-[16/9] lg:aspect-auto lg:h-[min(78vh,760px)]"
+      className="relative aspect-[4/3] w-full overflow-hidden bg-white sm:aspect-[16/9] lg:aspect-auto lg:h-[min(78vh,760px)]"
       onMouseEnter={() => setPaused(true)} // 滑鼠移入時暫停自動輪播
       onMouseLeave={() => setPaused(false)} // 滑鼠移出時恢復自動輪播
     >
@@ -37,15 +37,14 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) { // �
               alt={slide.image.alt}
               fill
               sizes="100vw"
-              className="object-cover opacity-50" /* 照片透明度 50% */
+              className="object-cover opacity-60" /* 照片透明度 60% */
               priority={i === 0} // 第一張優先載入
             />
             {slide.title && (
               <>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/40 via-ink/10 to-transparent" aria-hidden /> {/* 底部漸層遮罩，提高文字對比 */}
                 <div className="pointer-events-none absolute inset-x-0 bottom-3 px-3 sm:bottom-4 sm:px-6 lg:px-8">
                   <span className="mb-4 block h-1.5 w-16 bg-gold" aria-hidden /> {/* 標題上方的金色短線 */}
-                  <h2 className="max-w-[92%] font-display font-bold leading-tight tracking-wide text-paper [text-shadow:0_2px_16px_rgba(0,0,0,0.35)] text-3xl sm:text-5xl lg:text-7xl">
+                  <h2 className="max-w-[92%] font-display font-bold leading-tight tracking-wide text-black [text-shadow:0_2px_16px_rgba(255,255,255,0.6)] text-3xl sm:text-5xl lg:text-7xl">
                     {slide.title}
                   </h2>
                 </div>
