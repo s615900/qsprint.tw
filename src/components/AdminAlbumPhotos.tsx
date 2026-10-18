@@ -11,7 +11,7 @@ import {
 } from "@/app/admin/actions"; // 匯入作品集照片上傳、列出 R2 既有資料夾/照片的 Server Action
 import type { PortfolioPhoto } from "@/lib/db"; // 匯入相簿照片的型別
 
-const ALL_FOLDERS = ""; // 資料夾篩選下拉選單裡「全部資料夾」選項的值
+const NO_FOLDER = ""; // 資料夾下拉選單裡「請選擇相簿」選項的值(尚未選資料夾)
 
 export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次選多張照片上傳，也可以從 R2 既有照片(可依資料夾篩選)挑選重複使用，並逐張顯示縮圖、可個別刪除
   name, // 隱藏欄位的 name，表單送出時會帶著目前的照片清單(JSON 字串)
@@ -28,11 +28,10 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
 
   const [pickerOpen, setPickerOpen] = useState(false); // 「從既有照片挑選」視窗是否開啟
   const [folders, setFolders] = useState<string[] | null>(null); // R2 portfolio/ 底下的資料夾清單(相簿 ID、或手動建立的資料夾)，null 代表還沒載入過
-  const [selectedFolder, setSelectedFolder] = useState(ALL_FOLDERS); // 目前篩選的資料夾，預設「全部」
+  const [selectedFolder, setSelectedFolder] = useState(NO_FOLDER); // 目前選取的 R2 資料夾，預設尚未選
   const [existingPhotos, setExistingPhotos] = useState<PortfolioPhoto[] | null>(null); // 目前篩選條件下，R2 裡既有的照片清單，null 代表還沒載入過
   const [pickerLoading, setPickerLoading] = useState(false); // 正在向伺服器要既有照片清單
   const [pickerError, setPickerError] = useState<string | null>(null); // 載入既有照片清單失敗時的錯誤訊息
-  const [selected, setSelected] = useState<Set<string>>(new Set()); // 選圖器裡目前勾選的照片網址(切換資料夾時保留，方便跨資料夾複選)
 
   async function handleFilesChange(e: React.ChangeEvent<HTMLInputElement>) { // 選取一或多個檔案後，逐張依序上傳(自動加浮水印)
     const files = Array.from(e.target.files ?? []);
@@ -72,37 +71,33 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
     }
   }
 
-  async function openPicker() { // 開啟「從既有照片挑選」視窗:資料夾清單只在第一次開啟時載入，照片清單每次開啟都重新載入(可能有新上傳的)
+  async function openPicker() { // 開啟「從 R2 相簿匯入」視窗:資料夾清單只在第一次開啟時載入
     setPickerOpen(true);
-    setSelected(new Set());
+    setSelectedFolder(NO_FOLDER);
+    setExistingPhotos(null);
+    setPickerError(null);
     if (folders === null) {
       try {
         setFolders(await listPortfolioFoldersAction());
       } catch {
-        setFolders([]); // 資料夾清單載入失敗就當作沒有資料夾可篩選，不影響照片本身的載入
+        setFolders([]); // 資料夾清單載入失敗就當作沒有資料夾可選
       }
     }
-    await loadPhotos(selectedFolder);
   }
 
-  function handleFolderChange(folder: string) { // 切換資料夾篩選，重新載入該資料夾底下的照片(不會清空已勾選的項目)
+  function handleFolderChange(folder: string) { // 選好資料夾後，自動抓取該資料夾底下所有照片
     setSelectedFolder(folder);
+    if (folder === NO_FOLDER) {
+      setExistingPhotos(null);
+      return;
+    }
     loadPhotos(folder);
   }
 
-  function toggleSelected(src: string) { // 點一下縮圖切換勾選狀態
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(src)) next.delete(src);
-      else next.add(src);
-      return next;
-    });
-  }
+  const newPhotos = (existingPhotos ?? []).filter((p) => !photos.some((x) => x.src === p.src)); // 資料夾裡還沒在這本相簿的照片
 
-  function addSelectedPhotos() { // 把選圖器裡勾選的照片加進這本相簿(已經在相簿裡的就不重複加)
-    const alreadyIn = new Set(photos.map((p) => p.src));
-    const toAdd = (existingPhotos ?? []).filter((p) => selected.has(p.src) && !alreadyIn.has(p.src));
-    if (toAdd.length > 0) setPhotos((prev) => [...prev, ...toAdd]);
+  function addFolderPhotos() { // 把選取資料夾裡所有尚未加入的照片一次加進這本相簿
+    if (newPhotos.length > 0) setPhotos((prev) => [...prev, ...newPhotos]);
     setPickerOpen(false);
   }
 
@@ -120,7 +115,7 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
             onClick={openPicker} // 開啟既有照片挑選器，不用每次都重新上傳同一批照片
             className="whitespace-nowrap rounded-lg border border-line bg-paper-3 px-3 py-2 text-[12.5px] font-semibold hover:bg-paper"
           >
-            從既有照片挑選
+            從 R2 相簿匯入
           </button>
           <label className="cursor-pointer whitespace-nowrap rounded-lg border border-line bg-paper-3 px-3 py-2 text-[12.5px] font-semibold hover:bg-paper">
             {uploading ? `上傳中 (${uploading.done + 1}/${uploading.total})…` : "+ 選擇照片(可多選)"}
@@ -161,19 +156,23 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
         </div>
       )}
 
-      {pickerOpen && ( // 「從既有照片挑選」視窗:可依資料夾篩選，列出 R2 裡上傳過的照片，勾選後一次加進目前這本相簿
-        <AdminModal title="從既有照片挑選" onClose={() => setPickerOpen(false)}>
+      {pickerOpen && ( // 「從 R2 相簿匯入」視窗:選一個資料夾，自動抓取裡面全部照片加進目前這本相簿
+        <AdminModal title="從 R2 相簿匯入" onClose={() => setPickerOpen(false)}>
           <p className="mb-3 text-[12px] text-ink-soft">
-            點選照片可以複選,已經在這本相簿裡的照片會用勾選標記出來。可以用下面的資料夾篩選,快速找到特定一場賽事的照片。
+            選擇 R2 裡的相簿資料夾,系統會自動抓取該資料夾的所有照片,已經在這本相簿裡的會自動略過。
           </p>
 
-          {folders !== null && folders.length > 0 && ( // 有資料夾才顯示篩選下拉選單(沒設定 R2 或照片還沒分過資料夾時就不顯示)
+          {folders === null ? (
+            <p className="py-8 text-center text-[13px] text-ink-soft">載入中…</p>
+          ) : folders.length === 0 ? (
+            <p className="py-8 text-center text-[13px] text-ink-soft">R2 裡還沒有任何相簿資料夾。</p>
+          ) : (
             <select
               value={selectedFolder}
               onChange={(e) => handleFolderChange(e.target.value)}
               className="mb-3 w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-gold/40"
             >
-              <option value={ALL_FOLDERS}>全部資料夾的照片</option>
+              <option value={NO_FOLDER}>請選擇相簿資料夾</option>
               {folders.map((folder) => (
                 <option key={folder} value={folder}>
                   {folder}
@@ -182,50 +181,46 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
             </select>
           )}
 
-          {pickerLoading ? (
-            <p className="py-8 text-center text-[13px] text-ink-soft">載入中…</p>
-          ) : pickerError ? (
-            <p className="py-8 text-center text-[13px] text-coral">{pickerError}</p>
-          ) : !existingPhotos || existingPhotos.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-ink-soft">這個資料夾裡還沒有任何已上傳過的照片。</p>
-          ) : (
-            <div className="grid max-h-[50vh] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-5">
-              {existingPhotos.map((photo) => {
-                const isSelected = selected.has(photo.src);
-                const alreadyInAlbum = photos.some((p) => p.src === photo.src);
-                return (
-                  <button
-                    key={photo.src}
-                    type="button"
-                    onClick={() => toggleSelected(photo.src)}
-                    disabled={alreadyInAlbum}
-                    className={`relative aspect-square overflow-hidden rounded-lg border-2 ${
-                      alreadyInAlbum
-                        ? "cursor-not-allowed border-line opacity-40"
-                        : isSelected
-                          ? "border-gold"
-                          : "border-transparent hover:border-line"
-                    }`}
-                  >
-                    <PhotoTile src={photo.src} alt={photo.alt} />
-                    {(isSelected || alreadyInAlbum) && (
-                      <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-paper">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {selectedFolder !== NO_FOLDER &&
+            (pickerLoading ? (
+              <p className="py-8 text-center text-[13px] text-ink-soft">載入中…</p>
+            ) : pickerError ? (
+              <p className="py-8 text-center text-[13px] text-coral">{pickerError}</p>
+            ) : !existingPhotos || existingPhotos.length === 0 ? (
+              <p className="py-8 text-center text-[13px] text-ink-soft">這個資料夾裡沒有照片。</p>
+            ) : (
+              <>
+                <p className="mb-2 text-[12px] text-ink-soft">
+                  共 {existingPhotos.length} 張,其中 {newPhotos.length} 張可加入(預覽):
+                </p>
+                <div className="grid max-h-[50vh] grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-5">
+                  {existingPhotos.map((photo) => {
+                    const alreadyInAlbum = photos.some((p) => p.src === photo.src);
+                    return (
+                      <div
+                        key={photo.src}
+                        className={`relative aspect-square overflow-hidden rounded-lg border border-line ${alreadyInAlbum ? "opacity-40" : ""}`}
+                      >
+                        <PhotoTile src={photo.src} alt={photo.alt} />
+                        {alreadyInAlbum && (
+                          <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-paper">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ))}
 
           <button
             type="button"
-            onClick={addSelectedPhotos}
-            disabled={selected.size === 0}
+            onClick={addFolderPhotos}
+            disabled={pickerLoading || newPhotos.length === 0}
             className="mt-4 w-full rounded-full bg-gold px-4 py-2 text-[13px] font-semibold text-paper hover:bg-gold/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            加入已選的 {selected.size} 張照片
+            加入此相簿的 {newPhotos.length} 張照片
           </button>
         </AdminModal>
       )}
