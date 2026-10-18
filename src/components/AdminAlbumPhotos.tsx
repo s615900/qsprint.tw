@@ -59,6 +59,10 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function setCover(index: number) { // 把指定照片移到最前面當封面(第一張就是封面)
+    setPhotos((prev) => [prev[index], ...prev.filter((_, i) => i !== index)]);
+  }
+
   async function loadPhotos(folder: string) { // 依資料夾篩選條件，向伺服器要既有照片清單
     setPickerLoading(true);
     setPickerError(null);
@@ -142,6 +146,15 @@ export default function AdminAlbumPhotos({ // 相簿照片管理欄位:可一次
                 <span className="absolute left-1 top-1 rounded bg-ink/70 px-1.5 py-0.5 text-[9px] font-semibold text-paper">
                   封面
                 </span>
+              )}
+              {index !== 0 && ( // 非封面的照片，滑過時顯示「設為封面」
+                <button
+                  type="button"
+                  onClick={() => setCover(index)}
+                  className="absolute bottom-1 left-1 rounded bg-ink/70 px-1.5 py-0.5 text-[10px] font-semibold text-paper opacity-0 transition-opacity group-hover:opacity-100 max-sm:opacity-100"
+                >
+                  設為封面
+                </button>
               )}
               <button
                 type="button"
